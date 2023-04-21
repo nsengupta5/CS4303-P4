@@ -86,9 +86,11 @@ void draw(){
 
 
 
-  //draw current frame
-  image(currentFrames[currentFrame], playerWidth, playerWidth, playerWidth, playerHeight);
-
+  //draw current frame#
+  if(facingRight)
+  image(currentFrames[currentFrame], playerWidth*2, playerWidth, playerWidth, playerHeight);
+  else
+  image(currentFrames[currentFrame], playerWidth*1.5, playerWidth, playerWidth, playerHeight);
 
     //if non idle animation is done, go back to idle
     if(!idle && currentFrame == currentFrames.length-1){
