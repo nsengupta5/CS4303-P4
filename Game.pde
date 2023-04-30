@@ -1,3 +1,6 @@
+import java.awt.geom.*;
+
+
 // Particle global variables
 final int PARTICLE_INIT_XVEL = 0,
           PARTICLE_INIT_YVEL = 0;
@@ -53,12 +56,39 @@ void setup() {
 
 void draw() {
   background(#808080);
+  drawHealthBars();
   forceRegistry.updateForces();
   player1.integrate();
   player1.draw();
   player2.integrate();
   player2.draw();
   movePlayers();
+}
+
+
+void drawHealthBars(){
+
+  int proportion = displayWidth/PLAYER_WIDTH_PROPORTION;
+
+  //draw player 1 health bar from health out of max health
+  stroke(#ff0000);
+  noFill();
+  rect(proportion/3, proportion/3, player1.maxHealth * proportion/75, proportion/8);
+  stroke(#ff0000);
+  fill(#ff0000);
+  rect(proportion/3, proportion/3, player1.health * proportion/75, proportion/8);
+
+  //draw player 2 health bar from health out of max health
+  stroke(#ff0000);
+  noFill();
+  rect(displayWidth - proportion/3 - player2.maxHealth * proportion/75, proportion/3, player2.maxHealth * proportion/75, proportion/8);
+  stroke(#ff0000);
+  fill(#ff0000);
+  rect(displayWidth - proportion/3 - player2.health * proportion/75, proportion/3, player2.health * proportion/75, proportion/8);
+
+
+
+
 }
 
 void setupPlayers() {
@@ -115,7 +145,11 @@ void movePlayers() {
 void keyPressed() { 
   switch(key){
     case ' ':
-      player1.attack();
+      player1.attack();      
+      if(checkHit(player1, player2)){
+        if(player2.health > 0) player2.health -=10;
+        else player2.health = 0;
+      }  
       break;
     case 'a':
       player1MovingLeft = true;
@@ -135,6 +169,13 @@ void keyPressed() {
     case RIGHT:
       player2MovingRight = true;
       player2.faceRight();
+      break;
+    case UP:
+      player2.attack();
+      if(checkHit(player2, player1)){
+        if(player1.health > 0) player1.health -=10;
+        else player1.health = 0;
+      }
       break;
   }
 }
@@ -156,5 +197,19 @@ void keyReleased(){
     case RIGHT:
       player2MovingRight = false;
       break;
+  }
+}
+
+
+
+boolean checkHit(Player attacker, Player defender){
+
+  Rectangle2D attackingBox = new Rectangle2D.Float(attacker.position.x, attacker.position.y, attacker.playerWidth, attacker.playerHeight);
+  Rectangle2D defendingBox = new Rectangle2D.Float(defender.position.x, defender.position.y, defender.playerWidth, defender.playerHeight);
+
+  if(attackingBox.intersects(defendingBox)){
+    return true;
+  } else {
+    return false;
   }
 }

@@ -6,11 +6,20 @@ final class Player extends Particle {
   PImage[] attackFramesRight;
 
   PImage[] idleFramesLeft;
-  PImage[] attackFramesLeft;
+  PImage[] attackFramesLeft;  
+  
+ // https://chierit.itch.io/
+ // https://luizmelo.itch.io/
+//https://codemanu.itch.io/pixelart-effect-pack
 
+
+  
   int currentFrame = 0;
   int playerWidth;
   int playerHeight;
+
+  int health;
+  int maxHealth;
 
   int moveIncrement;
   float leftLimit, rightLimit;
@@ -27,6 +36,8 @@ final class Player extends Particle {
     this.rightLimit = rightLimit;
     loadTextures();
     currentFrames = idleFramesRight;
+    this.maxHealth = 100;
+    this.health = maxHealth;
   }
 
   void draw(){
@@ -39,7 +50,7 @@ final class Player extends Particle {
     if(facingRight)
       image(currentFrames[currentFrame], this.position.x, this.position.y, playerWidth, playerHeight);
     else
-      image(currentFrames[currentFrame], this.position.x, this.position.y, playerWidth, playerHeight);
+      image(currentFrames[currentFrame], this.position.x - playerWidth/2, this.position.y, playerWidth, playerHeight);
 
     //if non idle animation is done, go back to idle
     if(!idle && currentFrame == currentFrames.length-1){
