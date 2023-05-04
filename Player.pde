@@ -1,22 +1,24 @@
+import java.io.File;
+
 final class Player extends Particle {
 
   PImage[] currentFrames;
 
-  PImage[] idleFramesRight;
-  PImage[] attackFramesRight;
-
-  PImage[] idleFramesLeft;
-  PImage[] attackFramesLeft;  
+  PImage[] idleFrames;
+  PImage[] attackFrames;
+  PImage[] runFrames;  
   
  // https://chierit.itch.io/
  // https://luizmelo.itch.io/
 //https://codemanu.itch.io/pixelart-effect-pack
 
 
+  String characterName;
+
   
   int currentFrame = 0;
-  int playerWidth;
-  int playerHeight;
+  int animationWidth;
+  int animationHeight;
 
   int health;
   int maxHealth;
@@ -25,92 +27,127 @@ final class Player extends Particle {
   float leftLimit, rightLimit;
 
   boolean idle = true;
+  //change for player 2?
   boolean facingRight = true;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int playerWidth, int playerHeight, int moveIncrement, float leftLimit, float rightLimit){
+  boolean movingLeft = false;
+  boolean movingRight = false;
+
+
+  boolean attacking = false;
+
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, float leftLimit, float rightLimit, String characterName){
+    
     super(x, y, xVel, yVel, invM);
-    this.playerWidth = playerWidth;
-    this.playerHeight = playerHeight;
+    this.animationWidth = animationWidth;
+    this.animationHeight = animationHeight;
     this.moveIncrement = moveIncrement;
     this.leftLimit = leftLimit;
     this.rightLimit = rightLimit;
+    this.characterName = characterName;
     loadTextures();
-    currentFrames = idleFramesRight;
+    currentFrames = idleFrames;
     this.maxHealth = 100;
     this.health = maxHealth;
+
   }
 
   void draw(){
-    // update the current frame if enough frames have passed
-    if (frameCount % (60 / FRAME_RATE) == 0) {
+    // update the animation frame if enough game frames have passed
+    if (frameCount % (72 / FRAME_RATE) == 0) {
       currentFrame = (currentFrame + 1) % currentFrames.length;
     }
 
-    //draw current frame#
-    if(facingRight)
-      image(currentFrames[currentFrame], this.position.x, this.position.y, playerWidth, playerHeight);
-    else
-      image(currentFrames[currentFrame], this.position.x - playerWidth/2, this.position.y, playerWidth, playerHeight);
 
-    //if non idle animation is done, go back to idle
-    if(!idle && currentFrame == currentFrames.length-1){
+    //chosing animation frames
+    if((movingLeft || movingRight || attacking)){
+      if(idle){
+        idle = false;
+        currentFrame = 0;
+        currentFrames = runFrames;    
+      }
+      if(movingLeft){
+        moveLeft();
+        facingRight = false;
+      
+      } else if(movingRight){
+        moveRight();
+        facingRight = true;
+      }
+  
+    } else{
       idle = true;
-      currentFrame = 0;
+      //currentFrame = 0;
+      currentFrames = idleFrames;
+    }
 
-      if(facingRight)
-        currentFrames = idleFramesRight;
-      else
-        currentFrames = idleFramesLeft;
+    //looping animation
+    if(currentFrame >= currentFrames.length){
+      currentFrame = 0;
+    }
+
+    //draw current frame
+    if(facingRight){
+      image(currentFrames[currentFrame], this.position.x, this.position.y, animationWidth, animationHeight);
+    } else{
+      pushMatrix();
+      scale( -1, 1 );
+      image(currentFrames[currentFrame], -this.position.x, this.position.y, animationWidth, animationHeight);
+      popMatrix();
+    }
+      
+
+    //if attacking animation is done, go back to idle
+    if(attacking && currentFrame == currentFrames.length-1){
+      idle = true;
+      attacking = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
     }
   }
 
   void loadTextures(){
-    idleFramesRight = new PImage[8];
-    for (int i = 0; i < idleFramesRight.length; i++) {
-      idleFramesRight[i] = loadImage("textures/idle/r" + (i+1) + ".png");
+    // Get the current sketch directory using sketchPath()
+    String sketchDir = sketchPath("");
+
+    String idleDir = sketchDir + "textures/"+characterName+"/png/idle/";
+    String attackDir = sketchDir + "textures/"+characterName+"/png/1_atk/";
+    String runDir = sketchDir + "textures/"+characterName+"/png/run/";
+
+    idleFrames = new PImage[new File(idleDir).listFiles().length];
+    for (int i = 0; i < idleFrames.length; i++) {
+      idleFrames[i] = loadImage(idleDir + "idle_" + (i+1) + ".png");
     }
 
-    idleFramesLeft = new PImage[8];
-    for (int i = 0; i < idleFramesLeft.length; i++) {
-      idleFramesLeft[i] = loadImage("textures/idle/l" + (i+1) + ".png");
+    attackFrames = new PImage[new File(attackDir).listFiles().length];
+    for (int i = 0; i < attackFrames.length; i++) {
+      attackFrames[i] = loadImage(attackDir + "1_atk_" + (i+1) + ".png");
     }
 
-    attackFramesRight = new PImage[6];
-    for (int i = 0; i < attackFramesRight.length; i++) {
-      attackFramesRight[i] = loadImage("textures/attack/r" + (i+1) + ".png");
+    runFrames = new PImage[new File(runDir).listFiles().length];
+    for (int i = 0; i < runFrames.length; i++) {
+      runFrames[i] = loadImage(runDir + "run_" + (i+1) + ".png");
     }
 
-    attackFramesLeft = new PImage[6];
-    for (int i = 0; i < attackFramesLeft.length; i++) {
-      attackFramesLeft[i] = loadImage("textures/attack/l" + (i+1) + ".png");
-    }
   }
 
   void attack(){
-    if(idle){
-      idle = false;
-      currentFrame = 0;
-
-      if(facingRight)
-        currentFrames = attackFramesRight;
-      else
-        currentFrames = attackFramesLeft;
+    if(!attacking){
+      if(idle){
+          idle = false;
+          attacking = true;
+          currentFrame = 0;
+          currentFrames = attackFrames;
+      } else {
+          attacking = true;
+          currentFrame = 0;
+          currentFrames = attackFrames;
+      }
     }
-  }
 
-  void faceLeft(){
-    if(idle && facingRight){
-      currentFrames = idleFramesLeft;
-      facingRight = false;
-    }
   }
-
-  void faceRight(){
-    if(idle && !facingRight){
-      currentFrames = idleFramesRight;
-      facingRight = true;
-    }
-  }
+  
 
   /**
    * Moves the player left
@@ -119,6 +156,7 @@ final class Player extends Particle {
     position.x -= moveIncrement;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
+  
 
   /**
    * Moves the player right

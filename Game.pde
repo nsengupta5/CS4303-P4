@@ -19,16 +19,16 @@ final float GRAVITY_STRONG_CONST = 0.3f,
             USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int GROUND_OFFSET_PROPORTION = 15;
+final int GROUND_OFFSET_PROPORTION = 200;
 
 // Player global variables
-final int PLAYER_WIDTH_PROPORTION = 5,
-      PLAYER_HEIGHT_PROPORTION = 10,
-      PLAYER_INIT_X_PROPORTION = 7,
+final int PLAYER_WIDTH_PROPORTION = 2,
+      PLAYER_HEIGHT_PROPORTION = 4,
+      PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_INCREMENT_PROPORTION = 150;
 
 // Frame rate
-final int FRAME_RATE = 16;
+final int FRAME_RATE = 24;
 
 Player player1;
 Player player2;
@@ -47,6 +47,9 @@ Drag drag;
 
 void setup() {
   fullScreen();
+  noSmooth();
+  imageMode(CENTER);
+  
   frameRate(FRAME_RATE);
 
   setupForces();
@@ -62,13 +65,12 @@ void draw() {
   player1.draw();
   player2.integrate();
   player2.draw();
-  movePlayers();
 }
 
 
 void drawHealthBars(){
 
-  int proportion = displayWidth/PLAYER_WIDTH_PROPORTION;
+  int proportion = displayWidth/PLAYER_INIT_X_PROPORTION*2;
 
   //draw player 1 health bar from health out of max health
   stroke(#ff0000);
@@ -92,19 +94,19 @@ void drawHealthBars(){
 }
 
 void setupPlayers() {
-  int playerWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
-  int playerHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
+  int animationWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
+  int animationHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
   int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
-  int player1InitX = displayWidth/PLAYER_INIT_X_PROPORTION - playerWidth/2;
-  int player2InitX = displayWidth - displayWidth/PLAYER_INIT_X_PROPORTION - playerWidth/2;
-  int playerInitY = displayHeight - groundHeight - playerHeight;
+  int player1InitX = animationWidth;
+  int player2InitX = displayWidth - animationWidth;
+  int playerInitY = displayHeight - groundHeight - animationHeight;
 
   int playerMoveIncrement = displayWidth/PLAYER_INCREMENT_PROPORTION;
   float playerLeftLimit = 0;
-  float playerRightLimit = displayWidth - playerWidth;
+  float playerRightLimit = displayWidth;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit);
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, "water");
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, "knight");
   /* forceRegistry.add(player1, gravity); */
 }
 
@@ -122,25 +124,7 @@ void setupForces() {
   force = new PVector(0, 0);
 }
 
-/**
- * Moves the players
- */
-void movePlayers() {
-  // For two player games
-  if (player1MovingLeft) {
-    player1.moveLeft();
-  }
-  else if (player1MovingRight) {
-    player1.moveRight();
-  }
 
-  if (player2MovingLeft) {
-    player2.moveLeft();
-  }
-  else if (player2MovingRight) {
-    player2.moveRight();
-  }
-}
 
 void keyPressed() { 
   switch(key){
@@ -152,23 +136,19 @@ void keyPressed() {
       }  
       break;
     case 'a':
-      player1MovingLeft = true;
-      player1.faceLeft();
+      player1.movingLeft = true;
       break;
     case 'd':
-      player1.faceRight();
-      player1MovingRight = true;
+      player1.movingRight = true;
       break;
   }
 
   switch (keyCode) {
     case LEFT:
-      player2MovingLeft = true;
-      player2.faceLeft();
+      player2.movingLeft = true;
       break;
     case RIGHT:
-      player2MovingRight = true;
-      player2.faceRight();
+      player2.movingRight = true;
       break;
     case UP:
       player2.attack();
@@ -183,19 +163,19 @@ void keyPressed() {
 void keyReleased(){
   switch(key) {
     case 'a':
-      player1MovingLeft = false;
+      player1.movingLeft = false;
       break;
     case 'd':
-      player1MovingRight = false;
+      player1.movingRight = false;
       break;
   }
 
   switch (keyCode) {
     case LEFT:
-      player2MovingLeft = false;
+      player2.movingLeft = false;
       break;
     case RIGHT:
-      player2MovingRight = false;
+      player2.movingRight = false;
       break;
   }
 }
@@ -204,8 +184,8 @@ void keyReleased(){
 
 boolean checkHit(Player attacker, Player defender){
 
-  Rectangle2D attackingBox = new Rectangle2D.Float(attacker.position.x, attacker.position.y, attacker.playerWidth, attacker.playerHeight);
-  Rectangle2D defendingBox = new Rectangle2D.Float(defender.position.x, defender.position.y, defender.playerWidth, defender.playerHeight);
+  Rectangle2D attackingBox = new Rectangle2D.Float(attacker.position.x, attacker.position.y, attacker.animationWidth, attacker.animationHeight);
+  Rectangle2D defendingBox = new Rectangle2D.Float(defender.position.x, defender.position.y, defender.animationWidth, defender.animationHeight);
 
   if(attackingBox.intersects(defendingBox)){
     return true;
