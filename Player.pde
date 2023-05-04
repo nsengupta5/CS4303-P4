@@ -12,8 +12,6 @@ final class Player extends Particle {
  // https://luizmelo.itch.io/
 //https://codemanu.itch.io/pixelart-effect-pack
 
-
-  
   int currentFrame = 0;
   int playerWidth;
   int playerHeight;
@@ -23,17 +21,22 @@ final class Player extends Particle {
 
   int moveIncrement;
   float leftLimit, rightLimit;
+  float upperLimit, lowerLimit;
 
   boolean idle = true;
+  boolean isAirborne = false;
+  boolean isJumping = false;
   boolean facingRight = true;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int playerWidth, int playerHeight, int moveIncrement, float leftLimit, float rightLimit){
+  Player(int x, int y, float xVel, float yVel, float invM, int playerWidth, int playerHeight, int moveIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit){
     super(x, y, xVel, yVel, invM);
     this.playerWidth = playerWidth;
     this.playerHeight = playerHeight;
     this.moveIncrement = moveIncrement;
     this.leftLimit = leftLimit;
     this.rightLimit = rightLimit;
+    this.upperLimit = upperLimit;
+    this.lowerLimit = lowerLimit;
     loadTextures();
     currentFrames = idleFramesRight;
     this.maxHealth = 100;
@@ -44,6 +47,10 @@ final class Player extends Particle {
     // update the current frame if enough frames have passed
     if (frameCount % (60 / FRAME_RATE) == 0) {
       currentFrame = (currentFrame + 1) % currentFrames.length;
+    }
+
+    if (position.y >= lowerLimit) {
+      position.y = lowerLimit;
     }
 
     //draw current frame#
@@ -62,6 +69,7 @@ final class Player extends Particle {
       else
         currentFrames = idleFramesLeft;
     }
+
   }
 
   void loadTextures(){
@@ -127,4 +135,10 @@ final class Player extends Particle {
     position.x += moveIncrement;
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
+
+  void jump() {
+    if (!isAirborne && isJumping) 
+      velocity.y -= 20;
+    if (position.y <= 0) position.y = 0;
+  }
 }

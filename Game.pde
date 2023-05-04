@@ -1,22 +1,21 @@
 import java.awt.geom.*;
 
-
 // Particle global variables
 final int PARTICLE_INIT_XVEL = 0,
-          PARTICLE_INIT_YVEL = 0;
+      PARTICLE_INIT_YVEL = 0;
 
 final float PARTICLE_INVM_LOWER_LIM = 0.001f,
-            PARTICLE_INVM_UPPER_LIM = 0.005f;
+      PARTICLE_INVM_UPPER_LIM = 0.005f;
 
 // Forces global variables
 final float GRAVITY_STRONG_CONST = 0.3f,
-            GRAVITY_MID_CONST = 0.18f,
-            GRAVITY_WEAK_CONST = 0.10f,
-            WIND_STRONG_CONST = 25f,
-            WIND_MID_CONST = 15f,
-            WIND_WEAK_CONST = 5f,
-            DRAG_CONST = 0.005f,
-            USER_FORCE_PROPORTION = 20f;
+      GRAVITY_MID_CONST = 0.68f,
+      GRAVITY_WEAK_CONST = 0.10f,
+      WIND_STRONG_CONST = 25f,
+      WIND_MID_CONST = 15f,
+      WIND_WEAK_CONST = 5f,
+      DRAG_CONST = 0.005f,
+      USER_FORCE_PROPORTION = 20f;
 
 // World global variables
 final int GROUND_OFFSET_PROPORTION = 15;
@@ -28,7 +27,7 @@ final int PLAYER_WIDTH_PROPORTION = 5,
       PLAYER_INCREMENT_PROPORTION = 150;
 
 // Frame rate
-final int FRAME_RATE = 16;
+final int FRAME_RATE = 32;
 
 Player player1;
 Player player2;
@@ -45,19 +44,22 @@ Wind wind;
 Gravity gravity;
 Drag drag;
 
+World world;
+
 void setup() {
   fullScreen();
   frameRate(FRAME_RATE);
-
   setupForces();
   setupPlayers();
+  setupWorld();
 }
 
 
 void draw() {
-  background(#808080);
-  drawHealthBars();
+  background(#0b0b0b);
   forceRegistry.updateForces();
+  drawHealthBars();
+  world.draw();
   player1.integrate();
   player1.draw();
   player2.integrate();
@@ -67,7 +69,6 @@ void draw() {
 
 
 void drawHealthBars(){
-
   int proportion = displayWidth/PLAYER_WIDTH_PROPORTION;
 
   //draw player 1 health bar from health out of max health
@@ -85,12 +86,11 @@ void drawHealthBars(){
   stroke(#ff0000);
   fill(#ff0000);
   rect(displayWidth - proportion/3 - player2.health * proportion/75, proportion/3, player2.health * proportion/75, proportion/8);
-
-
-
-
 }
 
+/**
+ * Sets up the players of the game
+ */
 void setupPlayers() {
   int playerWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
   int playerHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
@@ -102,10 +102,21 @@ void setupPlayers() {
   int playerMoveIncrement = displayWidth/PLAYER_INCREMENT_PROPORTION;
   float playerLeftLimit = 0;
   float playerRightLimit = displayWidth - playerWidth;
+  float playerUpLimit = 0;
+  float playerDownLimit = displayHeight - groundHeight - playerHeight;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit);
-  /* forceRegistry.add(player1, gravity); */
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit);
+  forceRegistry.add(player1, gravity);
+  forceRegistry.add(player2, gravity);
+}
+
+/**
+ * Sets up the world of the game
+ */
+void setupWorld() {
+  int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
+  world = new World(groundHeight);
 }
 
 /**
@@ -126,6 +137,8 @@ void setupForces() {
  * Moves the players
  */
 void movePlayers() {
+  checkIfAirborne(player1);
+  checkIfAirborne(player2);
   // For two player games
   if (player1MovingLeft) {
     player1.moveLeft();
@@ -139,6 +152,23 @@ void movePlayers() {
   }
   else if (player2MovingRight) {
     player2.moveRight();
+  }
+
+  if (player1.isJumping) {
+    player1.jump();
+  }
+  if (player2.isJumping) {
+    player2.jump();
+  }
+}
+
+void checkIfAirborne(Player player) {
+  if(player.position.y < displayHeight - player.playerHeight - world.groundHeight){
+    player.isAirborne = true;
+  }
+  else{
+    player.isAirborne = false;
+    player.velocity.x = 0;
   }
 }
 
@@ -159,6 +189,10 @@ void keyPressed() {
       player1.faceRight();
       player1MovingRight = true;
       break;
+    case 'w':
+      player1.isJumping = true;
+      player1.isAirborne = true;
+      break;
   }
 
   switch (keyCode) {
@@ -171,12 +205,17 @@ void keyPressed() {
       player2.faceRight();
       break;
     case UP:
+      player2.isJumping = true;
+      player2.isAirborne = true;
+      break;
+    case SHIFT:
       player2.attack();
       if(checkHit(player2, player1)){
         if(player1.health > 0) player1.health -=10;
         else player1.health = 0;
       }
       break;
+
   }
 }
 
@@ -188,6 +227,10 @@ void keyReleased(){
     case 'd':
       player1MovingRight = false;
       break;
+    case 'w':
+      player1.isJumping = false;
+      player1.isAirborne = false;
+      break;'
   }
 
   switch (keyCode) {
@@ -196,6 +239,10 @@ void keyReleased(){
       break;
     case RIGHT:
       player2MovingRight = false;
+      break;
+    case UP:
+      player2.isJumping = false;
+      player2.isAirborne = false;
       break;
   }
 }
