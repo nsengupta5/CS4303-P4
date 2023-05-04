@@ -137,8 +137,9 @@ final class Player extends Particle {
   }  
 
   void jump() {
-    if (!isAirborne && isJumping) 
+    if (!isAirborne && isJumping) {
       velocity.y -= 20;
+    }
     if (position.y <= 0) position.y = 0;
   }
 }

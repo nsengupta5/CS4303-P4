@@ -9,7 +9,7 @@ final float PARTICLE_INVM_LOWER_LIM = 0.001f,
 
 // Forces global variables
 final float GRAVITY_STRONG_CONST = 0.3f,
-      GRAVITY_MID_CONST = 0.68f,
+      GRAVITY_MID_CONST = 0.18f,
       GRAVITY_WEAK_CONST = 0.10f,
       WIND_STRONG_CONST = 25f,
       WIND_MID_CONST = 15f,
@@ -43,14 +43,13 @@ ForceRegistry forceRegistry;
 Wind wind;
 Gravity gravity;
 Drag drag;
-
 World world;
 
 void setup() {
   fullScreen();
   frameRate(FRAME_RATE);
-  setupForces();
   setupPlayers();
+  setupForces();
   setupWorld();
 }
 
@@ -107,8 +106,6 @@ void setupPlayers() {
 
   player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit);
   player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), playerWidth, playerHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit);
-  forceRegistry.add(player1, gravity);
-  forceRegistry.add(player2, gravity);
 }
 
 /**
@@ -131,6 +128,9 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
+
+  forceRegistry.add(player1, gravity);
+  forceRegistry.add(player2, gravity);
 }
 
 /**
@@ -155,9 +155,11 @@ void movePlayers() {
   }
 
   if (player1.isJumping) {
+    forceRegistry.add(player1, gravity);
     player1.jump();
   }
   if (player2.isJumping) {
+    forceRegistry.add(player2, gravity);
     player2.jump();
   }
 }
@@ -168,7 +170,7 @@ void checkIfAirborne(Player player) {
   }
   else{
     player.isAirborne = false;
-    player.velocity.x = 0;
+    forceRegistry.remove(player, gravity);
   }
 }
 
