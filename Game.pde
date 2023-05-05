@@ -111,6 +111,7 @@ void draw() {
     player1.draw();
     player2.integrate();
     player2.draw();
+    drawHitboxes();
     checkWinner();
   }
 }
@@ -152,8 +153,8 @@ void setupPlayers() {
   int animationWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
   int animationHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
   int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
-  int player1InitX = animationWidth;
-  int player2InitX = displayWidth - animationWidth;
+  int player1InitX = animationWidth/2;
+  int player2InitX = displayWidth - animationWidth/2;
   int playerInitY = displayHeight - animationHeight;
 
   int playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
@@ -163,8 +164,8 @@ void setupPlayers() {
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "water");
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "knight");
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, 0);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, 1);
 }
 
 /**
@@ -201,7 +202,6 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
-
   forceRegistry.add(player1, gravity);
   forceRegistry.add(player2, gravity);
   for (Platform platform : world.platforms) {
@@ -214,11 +214,10 @@ void setupForces() {
 void keyPressed() { 
   switch(key){
     case ' ':
-      player1.attack();      
-      if(checkHit(player1, player2)){
-        if(player2.health > 0) player2.health -=10;
-        else player2.health = 0;
-      }  
+    if(!player1.attacking){
+      player1.attack();
+      checkHit();
+    }
       break;
     case 'a':
       player1.movingLeft = true;
@@ -229,6 +228,9 @@ void keyPressed() {
     case 'w':
       if (player1.isAirborne == false)
         player1.jump();
+        break;
+    case 'e':
+      player1.swapCharacter = true;
       break;
   }
 
@@ -242,13 +244,12 @@ void keyPressed() {
     case UP:
       if (player2.isAirborne == false)
         player2.jump();
-      break;
+        break;
     case SHIFT:
+    if(!player2.attacking){
       player2.attack();
-      if(checkHit(player2, player1)){
-        if(player1.health > 0) player1.health -=10;
-        else player1.health = 0;
-      }
+      checkHit();
+    }
       break;
   }
 }
@@ -284,14 +285,49 @@ void checkWinner() {
   }
 }
 
-boolean checkHit(Player attacker, Player defender){
+void checkHit(){
 
-  Rectangle2D attackingBox = new Rectangle2D.Float(attacker.position.x, attacker.position.y, attacker.animationWidth, attacker.animationHeight);
-  Rectangle2D defendingBox = new Rectangle2D.Float(defender.position.x, defender.position.y, defender.animationWidth, defender.animationHeight);
 
-  if(attackingBox.intersects(defendingBox)){
-    return true;
-  } else {
-    return false;
+  if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
+
+
+    if(player2.health > 0)        player2.health -=10;
+    else                          player2.health = 0;
+      
+
+
+  } 
+  
+  if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
+
+
+    if(player1.health > 0) player1.health -=10;
+    else                    player1.health = 0;
+      
+
   }
+
+
+
+}
+
+void drawHitboxes(){
+  if(player1.attacking || player2.attacking){
+  if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
+    player1.drawHitbox(false);
+    player2.drawHitbox(true);
+
+  } 
+  if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
+    player1.drawHitbox(true);
+    player2.drawHitbox(false);
+
+  } 
+}
+  else {
+    player1.drawHitbox(false);
+    player2.drawHitbox(false);
+  }
+  
+
 }

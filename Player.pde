@@ -1,4 +1,5 @@
 import java.io.File;
+import java.awt.geom.Rectangle2D;
 
 final class Player extends Particle {
 
@@ -13,7 +14,17 @@ final class Player extends Particle {
   //https://codemanu.itch.io/pixelart-effect-pack
 
 
-  String characterName;
+  //String characterName;
+  String[] characters = new String[]{
+    "monk",
+    "knight",
+    "water",
+    "leaf",
+    "metal",
+    "wind"};
+  int characterIndex;
+  boolean swapCharacter = false;
+
 
   int currentFrame = 0;
   int animationWidth;
@@ -33,26 +44,67 @@ final class Player extends Particle {
   boolean movingLeft = false;
   boolean movingRight = false;
   boolean attacking = false;
+  
+  int hitboxScale;
+  int attackBoxScale;
+  Rectangle2D playerBox;
+  Rectangle2D attackBox;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, String characterName){
+
+  int monkScale;
+
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, int characterIndex){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
+    
+    hitboxScale = animationWidth/10;
+    monkScale = hitboxScale*3/10;
+
+
+    //scale monk differently
+    if(characterIndex == 0){
+      this.animationHeight += monkScale;
+    }
+
     this.moveIncrement = moveIncrement;
     this.jumpIncrement = jumpIncrement;
     this.leftLimit = leftLimit;
     this.rightLimit = rightLimit;
     this.upperLimit = upperLimit;
     this.lowerLimit = lowerLimit;
-    this.characterName = characterName;
-    loadTextures();
+    //this.characterName = characterName;
+    this.characterIndex = characterIndex;
+    loadTextures(characters[characterIndex]);
     currentFrames = idleFrames;
     this.maxHealth = 100;
     this.health = maxHealth;
+
+    playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
+    attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
+    
   }
 
   void draw(){
-    // update the animation frame if enough game frames have passed
+
+    if(swapCharacter){
+      characterIndex++;
+
+      if(characterIndex >= characters.length){
+        characterIndex = 0;
+        this.animationHeight += monkScale;
+      } else if (characterIndex == 1){
+        this.animationHeight -= monkScale;
+      }
+        
+        
+      loadTextures(characters[characterIndex]);
+      swapCharacter = false;
+    }
+
+    
+
+        // update the animation frame if enough game frames have passed
     if (frameCount % (72 / FRAME_RATE) == 0) {
       currentFrame = (currentFrame + 1) % currentFrames.length;
     }
@@ -60,6 +112,7 @@ final class Player extends Particle {
     if (position.y >= lowerLimit) {
       position.y = lowerLimit;
     }
+
 
     //chosing animation frames
     if((movingLeft || movingRight || attacking)){
@@ -108,10 +161,41 @@ final class Player extends Particle {
       currentFrame = 0;
       currentFrames = idleFrames;
     }
+               
 
+
+    //update hitbox but dont draw it yet
+        playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
+
+
+
+    drawHitbox(false);
   }
 
-  void loadTextures(){
+  void drawHitbox(boolean intersects){
+    noFill();
+    if(intersects)
+    stroke(0, 255, 0);
+    else
+    stroke(255, 0, 0);
+
+    rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
+
+    if(this.attacking){
+
+      
+      if(!facingRight){
+        attackBoxScale = hitboxScale*-1; 
+      } else {
+        attackBoxScale = hitboxScale*3/2;
+      }
+
+      attackBox.setRect((float) playerBox.getX() + attackBoxScale, (float) playerBox.getY(), (float) playerBox.getWidth()/2, (float) playerBox.getHeight()/2);
+      rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
+    }
+  }
+
+  void loadTextures(String characterName){
     // Get the current sketch directory using sketchPath()
     String sketchDir = sketchPath("");
 
@@ -137,24 +221,19 @@ final class Player extends Particle {
   }
 
   void attack(){
-    if(!attacking){
-      if(idle){
+  if(!attacking){
         idle = false;
         attacking = true;
         currentFrame = 0;
         currentFrames = attackFrames;
-      } else {
-        attacking = true;
-        currentFrame = 0;
-        currentFrames = attackFrames;
-      }
-    }
+  }
   }
 
-  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
-    if (position.y < lowerLimit){
-      isAirborne = true;
-      registry.add(this, gravity);
+boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
+    if(position.y < lowerLimit){
+      if (isAirborne == false)
+        isAirborne = true;
+        registry.add(this, gravity);
     }
     else{
       isAirborne = false;
