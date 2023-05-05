@@ -152,10 +152,9 @@ final class Player extends Particle {
   }
 
   boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
-    if(position.y < lowerLimit){
-      if (isAirborne = false)
-        isAirborne = true;
-        registry.add(this, gravity);
+    if (position.y < lowerLimit){
+      isAirborne = true;
+      registry.add(this, gravity);
     }
     else{
       isAirborne = false;
@@ -173,10 +172,7 @@ final class Player extends Particle {
    * Moves the player left
    */
   void moveLeft() {
-    if (isAirborne == false)
-      position.x -= moveIncrement;
-    else
-      velocity.x -= moveIncrement;
+    position.x -= moveIncrement;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
 
@@ -185,17 +181,15 @@ final class Player extends Particle {
    * Moves the player right
    */
   void moveRight() {
-    if (isAirborne == false)
-      position.x += moveIncrement;
-    else
-      velocity.x += moveIncrement;
+    position.x += moveIncrement;
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
 
   void jump() {
-    if (true) {
+    if (!isAirborne) {
       velocity.y = 0;
       velocity.y -= jumpIncrement;
+      isAirborne = true;
     }
     if (position.y <= 0) position.y = 0;
   }

@@ -9,7 +9,7 @@ final float PARTICLE_INVM_LOWER_LIM = 0.001f,
 
 // Forces global variables
 final float GRAVITY_STRONG_CONST = 0.3f,
-      GRAVITY_MID_CONST = 0.88f,
+      GRAVITY_MID_CONST = 1f,
       GRAVITY_WEAK_CONST = 0.10f,
       WIND_STRONG_CONST = 25f,
       WIND_MID_CONST = 15f,
@@ -19,13 +19,11 @@ final float GRAVITY_STRONG_CONST = 0.3f,
 
 // World global variables
 final int MIN_NUM_PLATFORMS = 2,
-          MAX_NUM_PLATFORMS = 3,
+          MAX_NUM_PLATFORMS = 4,
           MIN_PLATFORM_LENGTH = 3,
           MAX_PLATFORM_LENGTH = 6,
-          BLOCKS_MIN_HEIGHT = 0,
-          BLOCKS_MAX_HEIGHT = 8,
-          BLOCK_WIDTH_PROPORTION = 25,
-          BLOCK_HEIGHT_PROPORTION = 15,
+          BLOCK_WIDTH_PROPORTION = 20,
+          BLOCK_HEIGHT_PROPORTION = 20,
           BLOCK_INIT_X_PROPORTION = 4,
           GROUND_OFFSET_PROPORTION = 10;
 
@@ -34,7 +32,7 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
-      PLAYER_JUMP_INCREMENT_PROPORTION = 100;
+      PLAYER_JUMP_INCREMENT_PROPORTION = 50;
 
 final float PLAYER_ANIMATION_SCALE = 2.05;
 
@@ -92,14 +90,16 @@ void setup() {
   frameRate(FRAME_RATE);
   setupTheme();
   setupPlayers();
-  setupForces();
   setupScreens();
   setupWorld();
+  setupForces();
 }
 
 
 void draw() {
   background(gameBackground);
+  player1.checkIfAirborne(forceRegistry, gravity);
+  player2.checkIfAirborne(forceRegistry, gravity);
   if (endScreen) {
     end.draw();
   }
@@ -204,6 +204,11 @@ void setupForces() {
 
   forceRegistry.add(player1, gravity);
   forceRegistry.add(player2, gravity);
+  for (Platform platform : world.platforms) {
+    for (Block block : platform.blocks) {
+      forceRegistry.add(block, gravity);
+    }
+  }
 }
 
 void keyPressed() { 
@@ -222,7 +227,7 @@ void keyPressed() {
       player1.movingRight = true;
       break;
     case 'w':
-      if (!player1.isAirborne)
+      if (player1.isAirborne == false)
         player1.jump();
       break;
   }
@@ -235,7 +240,7 @@ void keyPressed() {
       player2.movingRight = true;
       break;
     case UP:
-      if (!player2.isAirborne)
+      if (player2.isAirborne == false)
         player2.jump();
       break;
     case SHIFT:
