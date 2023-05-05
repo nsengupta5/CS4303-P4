@@ -18,7 +18,16 @@ final float GRAVITY_STRONG_CONST = 0.3f,
       USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int GROUND_OFFSET_PROPORTION = 200;
+final int MIN_NUM_PLATFORMS = 2,
+          MAX_NUM_PLATFORMS = 3,
+          MIN_PLATFORM_LENGTH = 3,
+          MAX_PLATFORM_LENGTH = 6,
+          BLOCKS_MIN_HEIGHT = 0,
+          BLOCKS_MAX_HEIGHT = 8,
+          BLOCK_WIDTH_PROPORTION = 25,
+          BLOCK_HEIGHT_PROPORTION = 15,
+          BLOCK_INIT_X_PROPORTION = 4,
+          GROUND_OFFSET_PROPORTION = 10;
 
 // Player global variables
 final int PLAYER_WIDTH_PROPORTION = 2,
@@ -26,6 +35,8 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
       PLAYER_JUMP_INCREMENT_PROPORTION = 100;
+
+final float PLAYER_ANIMATION_SCALE = 2.05;
 
 // Screen button global variables
 final float START_BUTTON_INIT_X_PROPORTION = 2.25,
@@ -143,14 +154,14 @@ void setupPlayers() {
   int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
   int player1InitX = animationWidth;
   int player2InitX = displayWidth - animationWidth;
-  int playerInitY = displayHeight - groundHeight - animationHeight;
+  int playerInitY = displayHeight - animationHeight;
 
   int playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
   int playerJumpIncrement = displayWidth/PLAYER_JUMP_INCREMENT_PROPORTION;
   float playerLeftLimit = 0;
   float playerRightLimit = displayWidth;
   float playerUpLimit = 0;
-  float playerDownLimit = displayHeight - groundHeight - playerHeight;
+  float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
   player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "water");
   player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "knight");
@@ -160,9 +171,10 @@ void setupPlayers() {
  * Sets up the World
  */
 void setupWorld() {
-  float animationHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
-  float groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
-  world = new World(groundHeight);
+  int blockWidth = displayWidth/BLOCK_WIDTH_PROPORTION;
+  int blockHeight = displayHeight/BLOCK_HEIGHT_PROPORTION;
+  int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
+  world = new World(PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, PARTICLE_INVM_LOWER_LIM, PARTICLE_INVM_UPPER_LIM ,groundHeight, MIN_NUM_PLATFORMS, MAX_NUM_PLATFORMS, MIN_PLATFORM_LENGTH, MAX_PLATFORM_LENGTH, blockWidth, blockHeight, gamePrimary);
 }
 
 /**
