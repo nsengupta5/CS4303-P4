@@ -23,9 +23,9 @@ final class Player extends Particle {
   int maxHealth;
 
   int moveIncrement;
+  int jumpIncrement;
   float leftLimit, rightLimit;
   float upperLimit, lowerLimit;
-
 
   boolean idle = true;
   boolean isAirborne = false;
@@ -35,11 +35,12 @@ final class Player extends Particle {
   boolean movingRight = false;
   boolean attacking = false;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, String characterName){
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, String characterName){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
     this.moveIncrement = moveIncrement;
+    this.jumpIncrement = jumpIncrement;
     this.leftLimit = leftLimit;
     this.rightLimit = rightLimit;
     this.upperLimit = upperLimit;
@@ -49,7 +50,6 @@ final class Player extends Particle {
     currentFrames = idleFrames;
     this.maxHealth = 100;
     this.health = maxHealth;
-
   }
 
   void draw(){
@@ -154,15 +154,16 @@ final class Player extends Particle {
         currentFrames = attackFrames;
       }
     }
-
   }
-  void checkIfAirborne(ForceRegistry registry, Gravity gravity) {
+
+  boolean checkIfAirborne() {
     if(position.y < lowerLimit){
       isAirborne = true;
     }
     else{
       isAirborne = false;
     }
+    return isAirborne;
   }
 
 
@@ -185,7 +186,7 @@ final class Player extends Particle {
 
   void jump() {
     if (!isAirborne && isJumping) {
-      velocity.y -= 1;
+      velocity.y -= jumpIncrement;
     }
     if (position.y <= 0) position.y = 0;
   }

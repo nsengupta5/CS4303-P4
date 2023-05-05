@@ -25,7 +25,8 @@ final int GROUND_OFFSET_PROPORTION = 200;
 final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
-      PLAYER_INCREMENT_PROPORTION = 150;
+      PLAYER_MOVE_INCREMENT_PROPORTION = 150,
+      PLAYER_JUMP_INCREMENT_PROPORTION = 100;
 
 // Frame rate
 final int FRAME_RATE = 24;
@@ -60,13 +61,13 @@ void setup() {
 
 void draw() {
   background(#808080);
+  updateForces();
   drawHealthBars();
   forceRegistry.updateForces();
   player1.integrate();
   player1.draw();
   player2.integrate();
   player2.draw();
-  updateForces();
 }
 
 
@@ -101,14 +102,15 @@ void setupPlayers() {
   int player2InitX = displayWidth - animationWidth;
   int playerInitY = displayHeight - groundHeight - animationHeight;
 
-  int playerMoveIncrement = displayWidth/PLAYER_INCREMENT_PROPORTION;
+  int playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
+  int playerJumpIncrement = displayWidth/PLAYER_JUMP_INCREMENT_PROPORTION;
   float playerLeftLimit = 0;
   float playerRightLimit = displayWidth;
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - playerHeight;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "water");
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "knight");
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "water");
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "knight");
 }
 
 void setupWorld() {
@@ -147,7 +149,6 @@ void keyPressed() {
       break;
     case 'w':
       player1.isJumping = true;
-      forceRegistry.add(player1, gravity);
       break;
   }
 
@@ -160,7 +161,6 @@ void keyPressed() {
       break;
     case UP:
       player2.isJumping = true;
-      forceRegistry.add(player2, gravity);
       break;
     case SHIFT:
       player2.attack();
@@ -199,11 +199,17 @@ void keyReleased(){
 }
 
 void updateForces() {
-  if (!player1.isAirborne) {
+  if (!player1.checkIfAirborne()) {
     forceRegistry.remove(player1, gravity);
   }
-  if (!player2.isAirborne) {
+  else {
+    forceRegistry.add(player1, gravity);
+  }
+  if (!player2.checkIfAirborne()) {
     forceRegistry.remove(player2, gravity);
+  }
+  else {
+    forceRegistry.add(player2, gravity);
   }
 }
 
