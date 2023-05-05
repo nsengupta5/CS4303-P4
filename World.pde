@@ -1,8 +1,8 @@
 final class World {
 
-  int groundHeight;
+  float groundHeight;
   
-  World(int groundHeight) {
+  World(float groundHeight) {
     this.groundHeight = groundHeight;
   }
 
@@ -11,5 +11,4 @@ final class World {
     stroke(120, 0, 255);
     rect(0, displayHeight - groundHeight, displayWidth, displayHeight);
   }
-
 }

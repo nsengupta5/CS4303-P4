@@ -1,6 +1,5 @@
 import java.awt.geom.*;
 
-
 // Particle global variables
 final int PARTICLE_INIT_XVEL = 0,
       PARTICLE_INIT_YVEL = 0;
@@ -26,7 +25,27 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
-      PLAYER_JUMP_INCREMENT_PROPORTION = 50;
+      PLAYER_JUMP_INCREMENT_PROPORTION = 100;
+
+// Screen button global variables
+final float START_BUTTON_INIT_X_PROPORTION = 2.25,
+          START_BUTTON_INIT_Y_PROPORTION = 2.5,
+          SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
+          SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
+          END_BUTTON_INIT_X_PROPORTION = 2.3,
+          END_BUTTON_INIT_Y_PROPORTION = 3.2;
+
+// Button global variables
+final int BUTTON_WIDTH_PROPORTION = 8,
+      BUTTON_HEIGHT_PROPORTION = 12,
+      BUTTON_GAP_PROPORTION = 25,
+      BUTTON_RADIUS = 5;
+
+// Color global variables
+final color GAME_PRIMARY = color(71, 45, 44),
+            GAME_SECONDARY = color(203, 133, 133),
+            GAME_WHITE = color(250, 250, 250),
+            GAME_BACKGROUND = color(234, 221, 202);
 
 // Frame rate
 final int FRAME_RATE = 24;
@@ -48,25 +67,41 @@ Drag drag;
 
 World world;
 
+boolean endScreen = false;
+EndScreen end;
+
+color gamePrimary;
+color gameSecondary;
+color gameBackground;
+
 void setup() {
   fullScreen();
   noSmooth();
   imageMode(CENTER);
   frameRate(FRAME_RATE);
+  setupTheme();
   setupPlayers();
   setupForces();
+  setupScreens();
   setupWorld();
 }
 
 
 void draw() {
-  background(#808080);
-  drawHealthBars();
-  forceRegistry.updateForces();
-  player1.integrate();
-  player1.draw();
-  player2.integrate();
-  player2.draw();
+  background(gameBackground);
+  if (endScreen) {
+    end.draw();
+  }
+  else {
+    world.draw();
+    drawHealthBars();
+    forceRegistry.updateForces();
+    player1.integrate();
+    player1.draw();
+    player2.integrate();
+    player2.draw();
+    checkWinner();
+  }
 }
 
 
@@ -91,6 +126,15 @@ void drawHealthBars(){
   rect(displayWidth - proportion/3 - player2.health * proportion/75, proportion/3, player2.health * proportion/75, proportion/8);
 }
 
+/**
+ * Sets up the theme colors
+ */
+void setupTheme() {
+  gamePrimary = GAME_PRIMARY;
+  gameSecondary = GAME_SECONDARY;
+  gameBackground = GAME_BACKGROUND;
+}
+
 void setupPlayers() {
   int playerWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
   int playerHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
@@ -112,9 +156,25 @@ void setupPlayers() {
   player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, "knight");
 }
 
+/**
+ * Sets up the World
+ */
 void setupWorld() {
-  int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
+  float animationHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
+  float groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
   world = new World(groundHeight);
+}
+
+/**
+ * Sets up the screens in the game
+ */
+void setupScreens() {
+  float endButtonInitX = displayWidth / END_BUTTON_INIT_X_PROPORTION;
+  float endButtonInitY = displayHeight / END_BUTTON_INIT_Y_PROPORTION;
+  int buttonWidth = displayWidth / BUTTON_WIDTH_PROPORTION;
+  int buttonHeight = displayHeight / BUTTON_HEIGHT_PROPORTION;
+  int buttonGap = displayHeight / BUTTON_GAP_PROPORTION;
+  end = new EndScreen(endButtonInitX, endButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, buttonGap, gamePrimary, gameSecondary, GAME_WHITE, gamePrimary);
 }
 
 /**
@@ -193,6 +253,17 @@ void keyReleased(){
     case RIGHT:
       player2.movingRight = false;
       break;
+  }
+}
+
+void checkWinner() {
+  if (player1.health <= 0) {
+    end.updateWinner("Player 2");
+    endScreen = true;
+  }
+  else if (player2.health <= 0) {
+    end.updateWinner("Player 1");
+    endScreen = true;
   }
 }
 

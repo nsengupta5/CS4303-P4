@@ -164,12 +164,19 @@ final class Player extends Particle {
     return isAirborne;
   }
 
+  boolean isDead() {
+    return health <= 0;
+  }
+
 
   /**
    * Moves the player left
    */
   void moveLeft() {
-    position.x -= moveIncrement;
+    if (isAirborne == false)
+      position.x -= moveIncrement;
+    else
+      velocity.x -= moveIncrement;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
 
@@ -178,7 +185,10 @@ final class Player extends Particle {
    * Moves the player right
    */
   void moveRight() {
-    position.x += moveIncrement;
+    if (isAirborne == false)
+      position.x += moveIncrement;
+    else
+      velocity.x += moveIncrement;
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
 
