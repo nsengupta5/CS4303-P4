@@ -26,7 +26,7 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
-      PLAYER_JUMP_INCREMENT_PROPORTION = 100;
+      PLAYER_JUMP_INCREMENT_PROPORTION = 50;
 
 // Frame rate
 final int FRAME_RATE = 24;
@@ -61,7 +61,6 @@ void setup() {
 
 void draw() {
   background(#808080);
-  updateForces();
   drawHealthBars();
   forceRegistry.updateForces();
   player1.integrate();
@@ -130,6 +129,9 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
+
+  forceRegistry.add(player1, gravity);
+  forceRegistry.add(player2, gravity);
 }
 
 void keyPressed() { 
@@ -148,7 +150,8 @@ void keyPressed() {
       player1.movingRight = true;
       break;
     case 'w':
-      player1.isJumping = true;
+      if (!player1.isAirborne)
+        player1.jump();
       break;
   }
 
@@ -160,7 +163,8 @@ void keyPressed() {
       player2.movingRight = true;
       break;
     case UP:
-      player2.isJumping = true;
+      if (!player2.isAirborne)
+        player2.jump();
       break;
     case SHIFT:
       player2.attack();
@@ -180,9 +184,6 @@ void keyReleased(){
     case 'd':
       player1.movingRight = false;
       break;
-    case 'w':
-      player1.isJumping = false;
-      break;
   }
 
   switch (keyCode) {
@@ -192,27 +193,8 @@ void keyReleased(){
     case RIGHT:
       player2.movingRight = false;
       break;
-    case UP:
-      player2.isJumping = false;
-      break;
   }
 }
-
-void updateForces() {
-  if (!player1.checkIfAirborne()) {
-    forceRegistry.remove(player1, gravity);
-  }
-  else {
-    forceRegistry.add(player1, gravity);
-  }
-  if (!player2.checkIfAirborne()) {
-    forceRegistry.remove(player2, gravity);
-  }
-  else {
-    forceRegistry.add(player2, gravity);
-  }
-}
-
 
 boolean checkHit(Player attacker, Player defender){
 

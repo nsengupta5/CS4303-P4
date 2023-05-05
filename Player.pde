@@ -29,7 +29,6 @@ final class Player extends Particle {
 
   boolean idle = true;
   boolean isAirborne = false;
-  boolean isJumping = false;
   boolean facingRight = true;
   boolean movingLeft = false;
   boolean movingRight = false;
@@ -60,10 +59,6 @@ final class Player extends Particle {
 
     if (position.y >= lowerLimit) {
       position.y = lowerLimit;
-    }
-
-    if (isJumping) {
-      jump();
     }
 
     //chosing animation frames
@@ -156,12 +151,15 @@ final class Player extends Particle {
     }
   }
 
-  boolean checkIfAirborne() {
+  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
     if(position.y < lowerLimit){
-      isAirborne = true;
+      if (isAirborne = false)
+        isAirborne = true;
+        registry.add(this, gravity);
     }
     else{
       isAirborne = false;
+      registry.remove(this, gravity);
     }
     return isAirborne;
   }
@@ -185,7 +183,8 @@ final class Player extends Particle {
   }  
 
   void jump() {
-    if (!isAirborne && isJumping) {
+    if (true) {
+      velocity.y = 0;
       velocity.y -= jumpIncrement;
     }
     if (position.y <= 0) position.y = 0;
