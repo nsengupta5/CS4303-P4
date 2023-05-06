@@ -282,7 +282,6 @@ final class Player extends Particle {
 
   void jump() {
     if (!isAirborne || lowerLimit != groundLimit) {
-      print("YO");
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;
