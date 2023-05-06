@@ -103,6 +103,7 @@ void setup() {
 
 void draw() {
   background(backgroundimg);
+  println(player1.velocity.y);
   player1.checkIfAirborne(forceRegistry, gravity);
   player2.checkIfAirborne(forceRegistry, gravity);
   player1.checkHoveringOnPlatform(world.platforms);

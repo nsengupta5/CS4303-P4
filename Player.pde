@@ -92,7 +92,6 @@ final class Player extends Particle {
   }
 
   void draw(){
-
     //change character
     if(swapCharacter){
       characterIndex++;
@@ -262,9 +261,6 @@ final class Player extends Particle {
     for (int i = 0; i < jumpDownFrames.length; i++) {
       jumpDownFrames[i] = loadImage(jumpDownDir + "jump_down_" + (i+1) + ".png");
     }
-    
-     
-
   }
 
   void attack(){
@@ -280,7 +276,6 @@ final class Player extends Particle {
     return isAirborne && velocity.y > 0;
   }
 
-
   void die(){
     idle = false;
     dying = true;
@@ -290,17 +285,18 @@ final class Player extends Particle {
 
   void checkHoveringOnPlatform(ArrayList<Platform> platforms) {
     float x = position.x;
-    boolean hovering = false;
+    float maxLowerLimit = groundLimit;
     for (Platform platform : platforms) {
       if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
         if (position.y + platform.platformHeight < platform.position.y) {
-          hovering = true;
-          lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+          float platY = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+          lowerLimit = platY;
+          if (platY < maxLowerLimit) 
+            maxLowerLimit = platY;
         }
       }
     }
-    if (!hovering) 
-      lowerLimit = groundLimit;
+    lowerLimit = maxLowerLimit;
   }
 
   boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
@@ -325,7 +321,7 @@ final class Player extends Particle {
 
   boolean checkOnPlatform(ArrayList<Platform> platforms) {
     for (Platform platform : platforms) {
-      if (position.y >= platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE) {
+      if (position.y == platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE) {
         if (position.x >= platform.position.x && position.x <= platform.position.x + platform.platformWidth) {
           lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
           return true;
