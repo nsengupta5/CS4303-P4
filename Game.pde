@@ -234,7 +234,7 @@ void keyPressed() {
         player1.movingRight = true;
         break;
       case 'w':
-        player1.jump();
+        player1.jump(world.platforms);
         break;
       case 'e':
         player1.swapCharacter = true;
@@ -249,7 +249,7 @@ void keyPressed() {
         player2.movingRight = true;
         break;
       case UP:
-        player2.jump();
+        player2.jump(world.platforms);
         break;
       case SHIFT:
       if(!player2.attacking){
