@@ -92,10 +92,10 @@ void setup() {
   imageMode(CENTER);
   frameRate(FRAME_RATE);
   setupTheme();
-  setupPlayers();
-  setupScreens();
   setupWorld();
   setupForces();
+  setupPlayers();
+  setupScreens();
   backgroundimg = loadImage("textures/Jungle.png","png");
   backgroundimg.resize(displayWidth,displayHeight);
 }
@@ -103,8 +103,9 @@ void setup() {
 
 void draw() {
   background(backgroundimg);
-  player1.checkIfAirborne(forceRegistry, gravity, world.platforms);
-  player2.checkIfAirborne(forceRegistry, gravity, world.platforms);
+  //println(player1.velocity.y);
+  //player1.checkIfAirborne(forceRegistry, gravity);
+  //player2.checkIfAirborne(forceRegistry, gravity);
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
@@ -115,9 +116,9 @@ void draw() {
     drawHealthBars();
     forceRegistry.updateForces();
     player1.integrate();
-    player1.draw();
+    player1.draw(world.platforms);
     player2.integrate();
-    player2.draw();
+    player2.draw(world.platforms);
     drawHitboxes();
   }
 }
@@ -170,8 +171,8 @@ void setupPlayers() {
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 0);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 1);
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 0, forceRegistry, gravity);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 1, forceRegistry, gravity);
 }
 
 /**
@@ -234,7 +235,7 @@ void keyPressed() {
         player1.movingRight = true;
         break;
       case 'w':
-        player1.jump(world.platforms);
+        player1.jump();
         break;
       case 'e':
         player1.swapCharacter = true;
@@ -249,7 +250,7 @@ void keyPressed() {
         player2.movingRight = true;
         break;
       case UP:
-        player2.jump(world.platforms);
+        player2.jump();
         break;
       case SHIFT:
       if(!player2.attacking){
