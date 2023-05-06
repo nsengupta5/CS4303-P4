@@ -18,14 +18,14 @@ final float GRAVITY_STRONG_CONST = 0.3f,
       USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int MIN_NUM_PLATFORMS = 2,
-          MAX_NUM_PLATFORMS = 4,
-          MIN_PLATFORM_LENGTH = 3,
-          MAX_PLATFORM_LENGTH = 6,
-          BLOCK_WIDTH_PROPORTION = 20,
-          BLOCK_HEIGHT_PROPORTION = 20,
-          BLOCK_INIT_X_PROPORTION = 4,
-          GROUND_OFFSET_PROPORTION = 10;
+final int MIN_NUM_PLATFORMS = 3,
+      MAX_NUM_PLATFORMS = 8,
+      MIN_PLATFORM_LENGTH = 3,
+      MAX_PLATFORM_LENGTH = 6,
+      BLOCK_WIDTH_PROPORTION = 20,
+      BLOCK_HEIGHT_PROPORTION = 20,
+      BLOCK_INIT_X_PROPORTION = 4,
+      GROUND_OFFSET_PROPORTION = 10;
 
 // Player global variables
 final int PLAYER_WIDTH_PROPORTION = 2,
@@ -38,11 +38,11 @@ final float PLAYER_ANIMATION_SCALE = 2.05;
 
 // Screen button global variables
 final float START_BUTTON_INIT_X_PROPORTION = 2.25,
-          START_BUTTON_INIT_Y_PROPORTION = 2.5,
-          SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
-          SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
-          END_BUTTON_INIT_X_PROPORTION = 2.3,
-          END_BUTTON_INIT_Y_PROPORTION = 3.2;
+      START_BUTTON_INIT_Y_PROPORTION = 2.5,
+      SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
+      SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
+      END_BUTTON_INIT_X_PROPORTION = 2.3,
+      END_BUTTON_INIT_Y_PROPORTION = 3.2;
 
 // Button global variables
 final int BUTTON_WIDTH_PROPORTION = 8,
@@ -52,9 +52,9 @@ final int BUTTON_WIDTH_PROPORTION = 8,
 
 // Color global variables
 final color GAME_PRIMARY = color(71, 45, 44),
-            GAME_SECONDARY = color(203, 133, 133),
-            GAME_WHITE = color(250, 250, 250),
-            GAME_BACKGROUND = color(234, 221, 202);
+      GAME_SECONDARY = color(203, 133, 133),
+      GAME_WHITE = color(250, 250, 250),
+      GAME_BACKGROUND = color(234, 221, 202);
 
 // Frame rate
 final int FRAME_RATE = 24;
@@ -98,8 +98,11 @@ void setup() {
 
 void draw() {
   background(gameBackground);
+  int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
   player1.checkIfAirborne(forceRegistry, gravity);
   player2.checkIfAirborne(forceRegistry, gravity);
+  player1.checkHoveringOnPlatform(world.platforms, groundHeight);
+  player2.checkHoveringOnPlatform(world.platforms, groundHeight);
   if (endScreen) {
     end.draw();
   }
@@ -214,10 +217,10 @@ void setupForces() {
 void keyPressed() { 
   switch(key){
     case ' ':
-    if(!player1.attacking){
-      player1.attack();
-      checkHit();
-    }
+      if(!player1.attacking){
+        player1.attack();
+        checkHit();
+      }
       break;
     case 'a':
       player1.movingLeft = true;
@@ -228,7 +231,7 @@ void keyPressed() {
     case 'w':
       if (player1.isAirborne == false)
         player1.jump();
-        break;
+      break;
     case 'e':
       player1.swapCharacter = true;
       break;
@@ -244,12 +247,12 @@ void keyPressed() {
     case UP:
       if (player2.isAirborne == false)
         player2.jump();
-        break;
+      break;
     case SHIFT:
-    if(!player2.attacking){
-      player2.attack();
-      checkHit();
-    }
+      if(!player2.attacking){
+        player2.attack();
+        checkHit();
+      }
       break;
   }
 }
@@ -293,17 +296,17 @@ void checkHit(){
 
     if(player2.health > 0)        player2.health -=10;
     else                          player2.health = 0;
-      
+
 
 
   } 
-  
+
   if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
 
 
     if(player1.health > 0) player1.health -=10;
     else                    player1.health = 0;
-      
+
 
   }
 
@@ -313,21 +316,19 @@ void checkHit(){
 
 void drawHitboxes(){
   if(player1.attacking || player2.attacking){
-  if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
-    player1.drawHitbox(false);
-    player2.drawHitbox(true);
+    if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
+      player1.drawHitbox(false);
+      player2.drawHitbox(true);
 
-  } 
-  if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
-    player1.drawHitbox(true);
-    player2.drawHitbox(false);
+    } 
+    if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
+      player1.drawHitbox(true);
+      player2.drawHitbox(false);
 
-  } 
-}
+    } 
+  }
   else {
     player1.drawHitbox(false);
     player2.drawHitbox(false);
   }
-  
-
 }

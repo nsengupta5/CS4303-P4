@@ -17,11 +17,11 @@ final class Player extends Particle {
   //String characterName;
   String[] characters = new String[]{
     "monk",
-    "knight",
-    "water",
-    "leaf",
-    "metal",
-    "wind"};
+      "knight",
+      "water",
+      "leaf",
+      "metal",
+      "wind"};
   int characterIndex;
   boolean swapCharacter = false;
 
@@ -44,7 +44,7 @@ final class Player extends Particle {
   boolean movingLeft = false;
   boolean movingRight = false;
   boolean attacking = false;
-  
+
   int hitboxScale;
   int attackBoxScale;
   Rectangle2D playerBox;
@@ -57,7 +57,7 @@ final class Player extends Particle {
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
-    
+
     hitboxScale = animationWidth/10;
     monkScale = hitboxScale*3/10;
 
@@ -82,7 +82,7 @@ final class Player extends Particle {
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
-    
+
   }
 
   void draw(){
@@ -96,15 +96,15 @@ final class Player extends Particle {
       } else if (characterIndex == 1){
         this.animationHeight -= monkScale;
       }
-        
-        
+
+
       loadTextures(characters[characterIndex]);
       swapCharacter = false;
     }
 
-    
 
-        // update the animation frame if enough game frames have passed
+
+    // update the animation frame if enough game frames have passed
     if (frameCount % (72 / FRAME_RATE) == 0) {
       currentFrame = (currentFrame + 1) % currentFrames.length;
     }
@@ -161,11 +161,11 @@ final class Player extends Particle {
       currentFrame = 0;
       currentFrames = idleFrames;
     }
-               
+
 
 
     //update hitbox but dont draw it yet
-        playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
+    playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
 
 
@@ -175,15 +175,15 @@ final class Player extends Particle {
   void drawHitbox(boolean intersects){
     noFill();
     if(intersects)
-    stroke(0, 255, 0);
+      stroke(0, 255, 0);
     else
-    stroke(255, 0, 0);
+      stroke(255, 0, 0);
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
     if(this.attacking){
 
-      
+
       if(!facingRight){
         attackBoxScale = hitboxScale*-1; 
       } else {
@@ -221,19 +221,38 @@ final class Player extends Particle {
   }
 
   void attack(){
-  if(!attacking){
-        idle = false;
-        attacking = true;
-        currentFrame = 0;
-        currentFrames = attackFrames;
-  }
+    if(!attacking){
+      idle = false;
+      attacking = true;
+      currentFrame = 0;
+      currentFrames = attackFrames;
+    }
   }
 
-boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
+  boolean isFalling() {
+    return isAirborne && velocity.y > 0;
+  }
+
+  void checkHoveringOnPlatform(ArrayList<Platform> platforms, int groundHeight) {
+    float x = position.x;
+    boolean hovering = false;
+    for (Platform platform : platforms) {
+      if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
+        if (position.y < platform.position.y) {
+          hovering = true;
+          lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+        }
+      }
+    }
+    if (!hovering) 
+      lowerLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
+  }
+
+  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
     if(position.y < lowerLimit){
       if (isAirborne == false)
         isAirborne = true;
-        registry.add(this, gravity);
+      registry.add(this, gravity);
     }
     else{
       isAirborne = false;
@@ -241,11 +260,6 @@ boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
     }
     return isAirborne;
   }
-
-  boolean isDead() {
-    return health <= 0;
-  }
-
 
   /**
    * Moves the player left

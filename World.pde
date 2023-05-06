@@ -41,7 +41,7 @@ final class World {
     int numPlatforms = (int) random(minNumPlatforms, maxNumPlatforms);
     for (int i = 0; i < numPlatforms; i++) {
       int x = (int) random(0, displayWidth);
-      int y = (int) random(0, displayHeight - groundHeight);
+      int y = (int) random(displayHeight / 2, displayHeight - groundHeight);
       int platformLength = (int) random(minPlatformLength, maxPlatformLength);
       int platformHeight = blockHeight;
       Platform p = new Platform(x, y, particleXVel, particleYVel, particleInvMLower, particleInvMUpper, platformLength, platformHeight, blockWidth, blockHeight, blockColor);
