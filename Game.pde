@@ -105,6 +105,8 @@ void draw() {
   background(backgroundimg);
   player1.checkIfAirborne(forceRegistry, gravity);
   player2.checkIfAirborne(forceRegistry, gravity);
+  player1.checkHoveringOnPlatform(world.platforms);
+  player2.checkHoveringOnPlatform(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
     end.draw();
   }
@@ -232,9 +234,8 @@ void keyPressed() {
         player1.movingRight = true;
         break;
       case 'w':
-        if (player1.isAirborne == false)
-          player1.jump();
-          break;
+        player1.jump();
+        break;
       case 'e':
         player1.swapCharacter = true;
         break;
@@ -248,9 +249,8 @@ void keyPressed() {
         player2.movingRight = true;
         break;
       case UP:
-        if (player2.isAirborne == false)
-          player2.jump();
-          break;
+        player2.jump();
+        break;
       case SHIFT:
       if(!player2.attacking){
         player2.attack();
