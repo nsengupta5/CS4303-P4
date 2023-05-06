@@ -18,10 +18,10 @@ final float GRAVITY_STRONG_CONST = 0.3f,
       USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int MIN_NUM_PLATFORMS = 3,
-      MAX_NUM_PLATFORMS = 4,
-      MIN_PLATFORM_LENGTH = 3,
-      MAX_PLATFORM_LENGTH = 6,
+final int MIN_NUM_PLATFORMS = 4,
+      MAX_NUM_PLATFORMS = 10,
+      MIN_PLATFORM_LENGTH = 1,
+      MAX_PLATFORM_LENGTH = 4,
       BLOCK_WIDTH_PROPORTION = 20,
       BLOCK_HEIGHT_PROPORTION = 20,
       BLOCK_INIT_X_PROPORTION = 4,
@@ -103,7 +103,6 @@ void setup() {
 
 void draw() {
   background(backgroundimg);
-  println(forceRegistry.registrations.size());
   player1.checkIfAirborne(forceRegistry, gravity, world.platforms);
   player2.checkIfAirborne(forceRegistry, gravity, world.platforms);
   player1.checkHoveringOnPlatform(world.platforms);
@@ -182,7 +181,9 @@ void setupWorld() {
   int blockWidth = displayWidth/BLOCK_WIDTH_PROPORTION;
   int blockHeight = displayHeight/BLOCK_HEIGHT_PROPORTION;
   int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
-  world = new World(PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, PARTICLE_INVM_LOWER_LIM, PARTICLE_INVM_UPPER_LIM ,groundHeight, MIN_NUM_PLATFORMS, MAX_NUM_PLATFORMS, MIN_PLATFORM_LENGTH, MAX_PLATFORM_LENGTH, blockWidth, blockHeight, gamePrimary);
+  int animationHeight = displayHeight/ PLAYER_HEIGHT_PROPORTION;
+  float playerHeight = animationHeight / PLAYER_ANIMATION_SCALE;
+  world = new World(PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, PARTICLE_INVM_LOWER_LIM, PARTICLE_INVM_UPPER_LIM ,groundHeight, MIN_NUM_PLATFORMS, MAX_NUM_PLATFORMS, MIN_PLATFORM_LENGTH, MAX_PLATFORM_LENGTH, blockWidth, blockHeight, gamePrimary, playerHeight);
 }
 
 /**
