@@ -205,7 +205,7 @@ final class Player extends Particle {
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-    if(this.attacking){
+if(this.attacking){
 
 
       if(!facingRight){
@@ -287,7 +287,7 @@ final class Player extends Particle {
     float x = position.x;
     float maxLowerLimit = groundLimit;
     for (Platform platform : platforms) {
-      if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
+  if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
         if (position.y + platform.platformHeight < platform.position.y) {
           float platY = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
           lowerLimit = platY;
@@ -299,9 +299,13 @@ final class Player extends Particle {
     lowerLimit = maxLowerLimit;
   }
 
-  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
+  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity, ArrayList<Platform> platforms) {
     if(position.y < groundLimit) {
-      if (isAirborne == false) {
+      if (checkOnPlatform(platforms)) {
+        isAirborne = false;
+        registry.remove(this, gravity);
+      }
+      else if (isAirborne == false) {
         isAirborne = true;
         registry.add(this, gravity);
       }
@@ -309,10 +313,9 @@ final class Player extends Particle {
     else{
       isAirborne = false;
       if((!idle) && (!attacking) && (!dying) && (!movingLeft) && (!movingRight)){
-        idle = true;
+idle = true;
         //currentFrame = 0;
        // currentFrames = idleFrames;
-
       }
       registry.remove(this, gravity);
     }

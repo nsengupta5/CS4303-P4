@@ -103,9 +103,9 @@ void setup() {
 
 void draw() {
   background(backgroundimg);
-  println(player1.velocity.y);
-  player1.checkIfAirborne(forceRegistry, gravity);
-  player2.checkIfAirborne(forceRegistry, gravity);
+  println(forceRegistry.registrations.size());
+  player1.checkIfAirborne(forceRegistry, gravity, world.platforms);
+  player2.checkIfAirborne(forceRegistry, gravity, world.platforms);
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
@@ -209,13 +209,11 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
-  forceRegistry.add(player1, gravity);
-  forceRegistry.add(player2, gravity);
-  for (Platform platform : world.platforms) {
-    for (Block block : platform.blocks) {
-      forceRegistry.add(block, gravity);
-    }
-  }
+  /* for (Platform platform : world.platforms) { */
+  /*   for (Block block : platform.blocks) { */
+  /*     forceRegistry.add(block, gravity); */
+  /*   } */
+  /* } */
 }
 
 void keyPressed() { 
@@ -297,29 +295,15 @@ void checkWinner() {
 }
 
 void checkHit(){
-
-
   if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
-
-
     if(player2.health > 0)        player2.health -=10;
     else                          player2.health = 0;
-
-
-
   } 
 
   if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
-
-
     if(player1.health > 0)  player1.health -=10;
     else                    player1.health = 0;
-
-
   }
-
-
-
 }
 
 void drawHitboxes(){
