@@ -37,6 +37,7 @@ final class Player extends Particle {
   int jumpIncrement;
   float leftLimit, rightLimit;
   float upperLimit, lowerLimit;
+  float groundLimit;
 
   boolean idle = true;
   boolean isAirborne = false;
@@ -53,14 +54,13 @@ final class Player extends Particle {
 
   int monkScale;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, int characterIndex){
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, int characterIndex){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
 
     hitboxScale = animationWidth/10;
     monkScale = hitboxScale*3/10;
-
 
     //scale monk differently
     if(characterIndex == 0){
@@ -73,6 +73,7 @@ final class Player extends Particle {
     this.rightLimit = rightLimit;
     this.upperLimit = upperLimit;
     this.lowerLimit = lowerLimit;
+    this.groundLimit = groundLimit;
     //this.characterName = characterName;
     this.characterIndex = characterIndex;
     loadTextures(characters[characterIndex]);
@@ -233,7 +234,7 @@ final class Player extends Particle {
     return isAirborne && velocity.y > 0;
   }
 
-  void checkHoveringOnPlatform(ArrayList<Platform> platforms, int groundHeight) {
+  void checkHoveringOnPlatform(ArrayList<Platform> platforms) {
     float x = position.x;
     boolean hovering = false;
     for (Platform platform : platforms) {
@@ -245,14 +246,15 @@ final class Player extends Particle {
       }
     }
     if (!hovering) 
-      lowerLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
+      lowerLimit = groundLimit;
   }
 
   boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
-    if(position.y < lowerLimit){
-      if (isAirborne == false)
+    if(position.y < groundLimit) {
+      if (isAirborne == false) {
         isAirborne = true;
-      registry.add(this, gravity);
+        registry.add(this, gravity);
+      }
     }
     else{
       isAirborne = false;
@@ -279,7 +281,8 @@ final class Player extends Particle {
   }  
 
   void jump() {
-    if (!isAirborne) {
+    if (!isAirborne || lowerLimit != groundLimit) {
+      print("YO");
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;
