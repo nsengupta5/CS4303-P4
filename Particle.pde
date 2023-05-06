@@ -1,6 +1,6 @@
 abstract class Particle {
   
-  public PVector position, velocity ;
+  public PVector position, velocity, acceleration;
   PVector forceAccumulator; 
   float invMass ;
 
@@ -23,6 +23,7 @@ abstract class Particle {
     position = new PVector(x, y) ;
     velocity = new PVector(xVel, yVel) ;
     forceAccumulator = new PVector(0, 0);
+    acceleration = new PVector(0, 0);
     invMass = invM ;    
   }
   
@@ -42,6 +43,7 @@ abstract class Particle {
     position.add(velocity) ;
     PVector resultingAcceleration = forceAccumulator.get() ;
     resultingAcceleration.mult(invMass) ;
+    acceleration = resultingAcceleration;
     velocity.add(resultingAcceleration) ;
     forceAccumulator.x = 0 ;
     forceAccumulator.y = 0 ;    

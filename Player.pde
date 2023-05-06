@@ -21,11 +21,11 @@ final class Player extends Particle {
   //String characterName;
   String[] characters = new String[]{
     "monk",
-    "knight",
-    "water",
-    "leaf",
-    "metal",
-    "wind"};
+      "knight",
+      "water",
+      "leaf",
+      "metal",
+      "wind"};
   int characterIndex;
   boolean swapCharacter = false;
 
@@ -41,6 +41,7 @@ final class Player extends Particle {
   int jumpIncrement;
   float leftLimit, rightLimit;
   float upperLimit, lowerLimit;
+  float groundLimit;
 
   boolean idle = true;
   boolean isAirborne = false;
@@ -58,14 +59,13 @@ final class Player extends Particle {
 
   int monkScale;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, int characterIndex){
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, int characterIndex){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
-    
+
     hitboxScale = animationWidth/10;
     monkScale = hitboxScale*3/10;
-
 
     //scale monk differently
     if(characterIndex == 0){
@@ -78,6 +78,7 @@ final class Player extends Particle {
     this.rightLimit = rightLimit;
     this.upperLimit = upperLimit;
     this.lowerLimit = lowerLimit;
+    this.groundLimit = groundLimit;
     //this.characterName = characterName;
     this.characterIndex = characterIndex;
     loadTextures(characters[characterIndex]);
@@ -87,7 +88,7 @@ final class Player extends Particle {
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
-    
+
   }
 
   void draw(){
@@ -102,15 +103,15 @@ final class Player extends Particle {
       } else if (characterIndex == 1){
         this.animationHeight -= monkScale;
       }
-        
-        
+
+
       loadTextures(characters[characterIndex]);
       swapCharacter = false;
     }
 
-    
 
-        // update the animation frame if enough game frames have passed
+
+    // update the animation frame if enough game frames have passed
     if (frameCount % (72 / FRAME_RATE) == 0) {
       currentFrame = (currentFrame + 1) % currentFrames.length;
     }
@@ -186,7 +187,7 @@ final class Player extends Particle {
 
 
     //update hitbox but dont draw it yet
-        playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
+    playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
 
 
@@ -199,15 +200,15 @@ final class Player extends Particle {
   void drawHitbox(boolean intersects){
     noFill();
     if(intersects)
-    stroke(0, 255, 0);
+      stroke(0, 255, 0);
     else
-    stroke(255, 0, 0);
+      stroke(255, 0, 0);
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
     if(this.attacking){
 
-      
+
       if(!facingRight){
         attackBoxScale = hitboxScale*-1; 
       } else {
@@ -287,11 +288,27 @@ final class Player extends Particle {
     currentFrames = deathFrames;
   }
 
-boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
-    if(position.y < lowerLimit){
-      if (isAirborne == false)
+  void checkHoveringOnPlatform(ArrayList<Platform> platforms) {
+    float x = position.x;
+    boolean hovering = false;
+    for (Platform platform : platforms) {
+      if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
+        if (position.y < platform.position.y) {
+          hovering = true;
+          lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+        }
+      }
+    }
+    if (!hovering) 
+      lowerLimit = groundLimit;
+  }
+
+  boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
+    if(position.y < groundLimit) {
+      if (isAirborne == false) {
         isAirborne = true;
         registry.add(this, gravity);
+      }
     }
     else{
       isAirborne = false;
@@ -305,11 +322,6 @@ boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
     }
     return isAirborne;
   }
-
-  boolean isDead() {
-    return health <= 0;
-  }
-
 
   /**
    * Moves the player left
@@ -349,7 +361,7 @@ boolean checkIfAirborne(ForceRegistry registry, Gravity gravity) {
   }  
 
   void jump() {
-    if (!isAirborne) {
+    if (!isAirborne || lowerLimit != groundLimit) {
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;

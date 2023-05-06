@@ -9,7 +9,7 @@ final float PARTICLE_INVM_LOWER_LIM = 0.001f,
 
 // Forces global variables
 final float GRAVITY_STRONG_CONST = 0.3f,
-      GRAVITY_MID_CONST = 1f,
+      GRAVITY_MID_CONST = 2.4f,
       GRAVITY_WEAK_CONST = 0.10f,
       WIND_STRONG_CONST = 25f,
       WIND_MID_CONST = 15f,
@@ -18,14 +18,14 @@ final float GRAVITY_STRONG_CONST = 0.3f,
       USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int MIN_NUM_PLATFORMS = 2,
-          MAX_NUM_PLATFORMS = 4,
-          MIN_PLATFORM_LENGTH = 3,
-          MAX_PLATFORM_LENGTH = 6,
-          BLOCK_WIDTH_PROPORTION = 20,
-          BLOCK_HEIGHT_PROPORTION = 20,
-          BLOCK_INIT_X_PROPORTION = 4,
-          GROUND_OFFSET_PROPORTION = 10;
+final int MIN_NUM_PLATFORMS = 3,
+      MAX_NUM_PLATFORMS = 4,
+      MIN_PLATFORM_LENGTH = 3,
+      MAX_PLATFORM_LENGTH = 6,
+      BLOCK_WIDTH_PROPORTION = 20,
+      BLOCK_HEIGHT_PROPORTION = 20,
+      BLOCK_INIT_X_PROPORTION = 4,
+      GROUND_OFFSET_PROPORTION = 10;
 
 // Player global variables
 final int PLAYER_WIDTH_PROPORTION = 2,
@@ -38,11 +38,11 @@ final float PLAYER_ANIMATION_SCALE = 2.05;
 
 // Screen button global variables
 final float START_BUTTON_INIT_X_PROPORTION = 2.25,
-          START_BUTTON_INIT_Y_PROPORTION = 2.5,
-          SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
-          SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
-          END_BUTTON_INIT_X_PROPORTION = 2.3,
-          END_BUTTON_INIT_Y_PROPORTION = 3.2;
+      START_BUTTON_INIT_Y_PROPORTION = 2.5,
+      SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
+      SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
+      END_BUTTON_INIT_X_PROPORTION = 2.3,
+      END_BUTTON_INIT_Y_PROPORTION = 3.2;
 
 // Button global variables
 final int BUTTON_WIDTH_PROPORTION = 8,
@@ -105,6 +105,8 @@ void draw() {
   background(backgroundimg);
   player1.checkIfAirborne(forceRegistry, gravity);
   player2.checkIfAirborne(forceRegistry, gravity);
+  player1.checkHoveringOnPlatform(world.platforms);
+  player2.checkHoveringOnPlatform(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
     end.draw();
   }
@@ -168,8 +170,8 @@ void setupPlayers() {
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, 0);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, 1);
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 0);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 1);
 }
 
 /**
@@ -232,9 +234,8 @@ void keyPressed() {
         player1.movingRight = true;
         break;
       case 'w':
-        if (player1.isAirborne == false)
-          player1.jump();
-          break;
+        player1.jump();
+        break;
       case 'e':
         player1.swapCharacter = true;
         break;
@@ -248,9 +249,8 @@ void keyPressed() {
         player2.movingRight = true;
         break;
       case UP:
-        if (player2.isAirborne == false)
-          player2.jump();
-          break;
+        player2.jump();
+        break;
       case SHIFT:
       if(!player2.attacking){
         player2.attack();
@@ -303,17 +303,17 @@ void checkHit(){
 
     if(player2.health > 0)        player2.health -=10;
     else                          player2.health = 0;
-      
+
 
 
   } 
-  
+
   if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
 
 
     if(player1.health > 0)  player1.health -=10;
     else                    player1.health = 0;
-      
+
 
   }
 
@@ -323,21 +323,19 @@ void checkHit(){
 
 void drawHitboxes(){
   if(player1.attacking || player2.attacking){
-  if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
-    player1.drawHitbox(false);
-    player2.drawHitbox(true);
+    if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
+      player1.drawHitbox(false);
+      player2.drawHitbox(true);
 
-  } 
-  if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
-    player1.drawHitbox(true);
-    player2.drawHitbox(false);
+    } 
+    if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
+      player1.drawHitbox(true);
+      player2.drawHitbox(false);
 
-  } 
-}
+    } 
+  }
   else {
     player1.drawHitbox(false);
     player2.drawHitbox(false);
   }
-  
-
 }
