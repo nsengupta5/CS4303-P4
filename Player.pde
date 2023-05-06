@@ -293,7 +293,7 @@ final class Player extends Particle {
     boolean hovering = false;
     for (Platform platform : platforms) {
       if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
-        if (position.y < platform.position.y) {
+        if (position.y + platform.platformHeight < platform.position.y) {
           hovering = true;
           lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
         }
@@ -323,6 +323,18 @@ final class Player extends Particle {
     return isAirborne;
   }
 
+  boolean checkOnPlatform(ArrayList<Platform> platforms) {
+    for (Platform platform : platforms) {
+      if (position.y >= platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE) {
+        if (position.x >= platform.position.x && position.x <= platform.position.x + platform.platformWidth) {
+          lowerLimit = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * Moves the player left
    */
@@ -340,7 +352,6 @@ final class Player extends Particle {
     position.x -= moveIncrement;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
-
 
   /**
    * Moves the player right
@@ -360,8 +371,8 @@ final class Player extends Particle {
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
 
-  void jump() {
-    if (!isAirborne || lowerLimit != groundLimit) {
+  void jump(ArrayList<Platform> platforms) {
+    if (!isAirborne || checkOnPlatform(platforms)) {
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;
