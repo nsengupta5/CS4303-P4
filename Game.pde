@@ -51,13 +51,13 @@ final int BUTTON_WIDTH_PROPORTION = 8,
       BUTTON_RADIUS = 5;
 
 // Color global variables
-final color GAME_PRIMARY = color(71, 45, 44),
-      GAME_SECONDARY = color(203, 133, 133),
-      GAME_WHITE = color(250, 250, 250),
-      GAME_BACKGROUND = color(234, 221, 202);
+final color GAME_PRIMARY = color(48,69,41),
+            GAME_SECONDARY = color(203, 133, 133),
+            GAME_WHITE = color(250, 250, 250),
+            GAME_BACKGROUND = color(234, 221, 202);
 
 // Frame rate
-final int FRAME_RATE = 24;
+final int FRAME_RATE = 25;
 
 Player player1;
 Player player2;
@@ -83,6 +83,9 @@ color gamePrimary;
 color gameSecondary;
 color gameBackground;
 
+PImage backgroundimg;
+
+
 void setup() {
   fullScreen();
   noSmooth();
@@ -93,17 +96,16 @@ void setup() {
   setupScreens();
   setupWorld();
   setupForces();
+  backgroundimg = loadImage("textures/Jungle.png","png");
+  backgroundimg.resize(displayWidth,displayHeight);
 }
 
 
 void draw() {
-  background(gameBackground);
-  int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
+  background(backgroundimg);
   player1.checkIfAirborne(forceRegistry, gravity);
   player2.checkIfAirborne(forceRegistry, gravity);
-  player1.checkHoveringOnPlatform(world.platforms);
-  player2.checkHoveringOnPlatform(world.platforms);
-  if (endScreen) {
+  if (endScreen && !player1.dying && !player2.dying) {
     end.draw();
   }
   else {
@@ -115,7 +117,6 @@ void draw() {
     player2.integrate();
     player2.draw();
     drawHitboxes();
-    checkWinner();
   }
 }
 
@@ -158,7 +159,7 @@ void setupPlayers() {
   int groundHeight = displayHeight / GROUND_OFFSET_PROPORTION;
   int player1InitX = animationWidth/2;
   int player2InitX = displayWidth - animationWidth/2;
-  int playerInitY = displayHeight - animationHeight;
+  int playerInitY = displayHeight - animationHeight*4;
 
   int playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
   int playerJumpIncrement = displayWidth/PLAYER_JUMP_INCREMENT_PROPORTION;
@@ -215,44 +216,50 @@ void setupForces() {
 }
 
 void keyPressed() { 
-  switch(key){
-    case ' ':
-      if(!player1.attacking){
+  if(!endScreen){
+    switch(key){
+      case ' ':
+      if(!player1.attacking ){
         player1.attack();
         checkHit();
+            checkWinner();
       }
-      break;
-    case 'a':
-      player1.movingLeft = true;
-      break;
-    case 'd':
-      player1.movingRight = true;
-      break;
-    case 'w':
-      player1.jump();
-      break;
-    case 'e':
-      player1.swapCharacter = true;
-      break;
-  }
+        break;
+      case 'a':
+        player1.movingLeft = true;
+        break;
+      case 'd':
+        player1.movingRight = true;
+        break;
+      case 'w':
+        if (player1.isAirborne == false)
+          player1.jump();
+          break;
+      case 'e':
+        player1.swapCharacter = true;
+        break;
+    }
 
-  switch (keyCode) {
-    case LEFT:
-      player2.movingLeft = true;
-      break;
-    case RIGHT:
-      player2.movingRight = true;
-      break;
-    case UP:
-      player2.jump();
-      break;
-    case SHIFT:
+    switch (keyCode) {
+      case LEFT:
+        player2.movingLeft = true;
+        break;
+      case RIGHT:
+        player2.movingRight = true;
+        break;
+      case UP:
+        if (player2.isAirborne == false)
+          player2.jump();
+          break;
+      case SHIFT:
       if(!player2.attacking){
         player2.attack();
         checkHit();
+            checkWinner();
       }
-      break;
-  }
+        break;
+    }
+   }
 }
 
 void keyReleased(){
@@ -277,10 +284,12 @@ void keyReleased(){
 
 void checkWinner() {
   if (player1.health <= 0) {
+    player1.die();
     end.updateWinner("Player 2");
     endScreen = true;
   }
   else if (player2.health <= 0) {
+    player2.die();
     end.updateWinner("Player 1");
     endScreen = true;
   }
@@ -302,7 +311,7 @@ void checkHit(){
   if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
 
 
-    if(player1.health > 0) player1.health -=10;
+    if(player1.health > 0)  player1.health -=10;
     else                    player1.health = 0;
 
 

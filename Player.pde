@@ -7,7 +7,11 @@ final class Player extends Particle {
 
   PImage[] idleFrames;
   PImage[] attackFrames;
-  PImage[] runFrames;  
+  PImage[] runFrames; 
+  PImage[] deathFrames;
+  PImage[] jumpUpFrames;
+  PImage[] jumpDownFrames;
+
 
   // https://chierit.itch.io/
   // https://luizmelo.itch.io/
@@ -45,7 +49,8 @@ final class Player extends Particle {
   boolean movingLeft = false;
   boolean movingRight = false;
   boolean attacking = false;
-
+  boolean dying = false;
+  
   int hitboxScale;
   int attackBoxScale;
   Rectangle2D playerBox;
@@ -88,6 +93,7 @@ final class Player extends Particle {
 
   void draw(){
 
+    //change character
     if(swapCharacter){
       characterIndex++;
 
@@ -116,27 +122,37 @@ final class Player extends Particle {
 
 
     //chosing animation frames
-    if((movingLeft || movingRight || attacking)){
-      if(idle){
-        idle = false;
-        currentFrame = 0;
-        currentFrames = runFrames;    
-      }
-      if(movingLeft){
+    if((movingLeft || movingRight || attacking || dying)){
+   
+      
+      if(movingLeft && !dying){
         moveLeft();
         facingRight = false;
 
-      } else if(movingRight){
+      } else if(movingRight && !dying){
         moveRight();
         facingRight = true;
       }
-
+      
     } 
-    else{
+    else if(!isAirborne) {
       idle = true;
       //currentFrame = 0;
       currentFrames = idleFrames;
-    }
+     }
+
+
+      //&& velcocity != 0 for platform, because isAirborne is true when on platform
+      if(isAirborne && velocity.y != 0){
+        if(isFalling()){
+          currentFrames = jumpDownFrames;
+        } else {
+          currentFrames = jumpUpFrames;
+        }
+       
+     }
+
+
 
     //looping animation
     if(currentFrame >= currentFrames.length){
@@ -163,6 +179,11 @@ final class Player extends Particle {
       currentFrames = idleFrames;
     }
 
+    //if dying animation is done, set dying to false so game can end
+    if(dying && currentFrame == currentFrames.length-1){
+      dying = false;
+    }
+               
 
 
     //update hitbox but dont draw it yet
@@ -171,7 +192,10 @@ final class Player extends Particle {
 
 
     drawHitbox(false);
+
+    
   }
+
 
   void drawHitbox(boolean intersects){
     noFill();
@@ -203,6 +227,10 @@ final class Player extends Particle {
     String idleDir = sketchDir + "textures/"+characterName+"/png/idle/";
     String attackDir = sketchDir + "textures/"+characterName+"/png/1_atk/";
     String runDir = sketchDir + "textures/"+characterName+"/png/run/";
+    String deathDir = sketchDir + "textures/"+characterName+"/png/death/";
+    String jumpUpDir = sketchDir + "textures/"+characterName+"/png/jump_up/";
+    String jumpDownDir = sketchDir + "textures/"+characterName+"/png/jump_down/";
+
 
     idleFrames = new PImage[new File(idleDir).listFiles().length];
     for (int i = 0; i < idleFrames.length; i++) {
@@ -210,7 +238,7 @@ final class Player extends Particle {
     }
 
     attackFrames = new PImage[new File(attackDir).listFiles().length];
-    for (int i = 0; i < attackFrames.length; i++) {
+    for (int i = 0; i < attackFrames.length; i++) { 
       attackFrames[i] = loadImage(attackDir + "1_atk_" + (i+1) + ".png");
     }
 
@@ -219,19 +247,45 @@ final class Player extends Particle {
       runFrames[i] = loadImage(runDir + "run_" + (i+1) + ".png");
     }
 
+    deathFrames = new PImage[new File(deathDir).listFiles().length];
+    for (int i = 0; i < deathFrames.length; i++) {
+      deathFrames[i] = loadImage(deathDir + "death_" + (i+1) + ".png");
+    }
+
+    //print(characterName);
+    jumpUpFrames = new PImage[new File(jumpUpDir).listFiles().length];
+    for (int i = 0; i < jumpUpFrames.length; i++) {
+      jumpUpFrames[i] = loadImage(jumpUpDir + "jump_up_" + (i+1) + ".png");
+    }
+
+    jumpDownFrames = new PImage[new File(jumpDownDir).listFiles().length];
+    for (int i = 0; i < jumpDownFrames.length; i++) {
+      jumpDownFrames[i] = loadImage(jumpDownDir + "jump_down_" + (i+1) + ".png");
+    }
+    
+     
+
   }
 
   void attack(){
     if(!attacking){
-      idle = false;
-      attacking = true;
-      currentFrame = 0;
-      currentFrames = attackFrames;
+        idle = false;
+        attacking = true;
+        currentFrame = 0;
+        currentFrames = attackFrames;
     }
   }
 
-  boolean isFalling() {
+  boolean isFalling(){
     return isAirborne && velocity.y > 0;
+  }
+
+
+  void die(){
+    idle = false;
+    dying = true;
+    currentFrame = 0;
+    currentFrames = deathFrames;
   }
 
   void checkHoveringOnPlatform(ArrayList<Platform> platforms) {
@@ -258,6 +312,12 @@ final class Player extends Particle {
     }
     else{
       isAirborne = false;
+      if((!idle) && (!attacking) && (!dying) && (!movingLeft) && (!movingRight)){
+        idle = true;
+        //currentFrame = 0;
+       // currentFrames = idleFrames;
+
+      }
       registry.remove(this, gravity);
     }
     return isAirborne;
@@ -267,6 +327,16 @@ final class Player extends Particle {
    * Moves the player left
    */
   void moveLeft() {
+    //if(!isAirborne & !movingLeft) idle = true;
+
+      // if(idle){
+         if(!attacking){
+        idle = false;
+        //currentFrame = 0;
+        currentFrames = runFrames;    
+         }
+      //}
+
     position.x -= moveIncrement;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
@@ -276,6 +346,16 @@ final class Player extends Particle {
    * Moves the player right
    */
   void moveRight() {
+ //if(!isAirborne && !movingRight) idle = true;
+     //  if(idle){
+      if(!attacking){
+        idle = false;
+       // currentFrame = 0;
+        currentFrames = runFrames;  
+      }
+  
+      //}
+
     position.x += moveIncrement;
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
@@ -285,6 +365,9 @@ final class Player extends Particle {
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;
+      idle = false;
+      currentFrame = 0;
+      currentFrames = jumpUpFrames;
     }
     if (position.y <= 0) position.y = 0;
   }
