@@ -11,9 +11,8 @@ final class World {
   int particleXVel, particleYVel;
   float particleInvMLower, particleInvMUpper;
   float playerHeight;
-  
-  public World(int xVel, int yVel, float invMLower, float invMUpper, int groundHeight, int minNumPlatforms, int maxNumPlatforms, int minPlatformLength, int maxPlatformLength, int blockWidth, int blockHeight, int blockColor, float playerHeight) {
-    this.particleXVel = xVel;
+
+public World(int xVel, int yVel, float invMLower, float invMUpper, int groundHeight, int minNumPlatforms, int maxNumPlatforms, int minPlatformLength, int maxPlatformLength, int blockWidth, int blockHeight, int blockColor, float playerHeight) {    this.particleXVel = xVel;
     this.particleYVel = yVel;
     this.particleInvMLower = invMLower;
     this.particleInvMUpper = invMUpper;
@@ -39,7 +38,7 @@ final class World {
     }
   }
 
-  boolean isJumpable(Platform p) {
+   boolean isJumpable(Platform p) {
     if (p.position.y - groundHeight <= playerHeight * 1.3) {
       return true;
     }
@@ -61,7 +60,8 @@ final class World {
     return possibleY;
   }
 
-  void generatePlatforms() {
+
+   void generatePlatforms() {
     int numPlatforms = (int) random(minNumPlatforms, maxNumPlatforms);
     ArrayList<Integer> possibleY = getPossiblePlatformYs();
     int firstSegment = possibleY.get(possibleY.size() - 1);
