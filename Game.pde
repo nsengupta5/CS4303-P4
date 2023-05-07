@@ -18,8 +18,8 @@ final float GRAVITY_STRONG_CONST = 0.3f,
       USER_FORCE_PROPORTION = 20f;
 
 // World global variables
-final int MIN_NUM_PLATFORMS = 4,
-      MAX_NUM_PLATFORMS = 10,
+final int MIN_NUM_PLATFORMS = 15,
+      MAX_NUM_PLATFORMS = 20,
       MIN_PLATFORM_LENGTH = 1,
       MAX_PLATFORM_LENGTH = 4,
       BLOCK_WIDTH_PROPORTION = 20,

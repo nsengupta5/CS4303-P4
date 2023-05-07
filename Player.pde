@@ -218,12 +218,7 @@ final class Player extends Particle {
 
     //update hitbox but dont draw it yet
     playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
-
-
-
     drawHitbox(false);
-
-    
   }
 
 
