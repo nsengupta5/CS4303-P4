@@ -12,6 +12,11 @@ final class Player extends Particle {
   PImage[] jumpUpFrames;
   PImage[] jumpDownFrames;
 
+  enum PlayerState {
+    IDLE, 
+    ATTACKING, 
+    DYING
+  }
 
   // https://chierit.itch.io/
   // https://luizmelo.itch.io/
@@ -28,7 +33,6 @@ final class Player extends Particle {
       "wind"};
   int characterIndex;
   boolean swapCharacter = false;
-
 
   int currentFrame = 0;
   int animationWidth;
@@ -56,14 +60,14 @@ final class Player extends Particle {
   Rectangle2D playerBox;
   Rectangle2D attackBox;
 
-
   int monkScale;
-
   
   ForceRegistry thisRegistry;
   Gravity thisGravity;
 
   ArrayList<Platform> platforms;
+
+  State state;
 
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
@@ -95,6 +99,8 @@ final class Player extends Particle {
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
+
+    state = new State(PlayerState.IDLE);
 
     thisRegistry = registry;
     thisGravity = gravity;
@@ -383,4 +389,5 @@ if(this.attacking){
     }
     if (position.y <= 0) position.y = 0;
   }
+
 }
