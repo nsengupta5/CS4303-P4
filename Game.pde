@@ -67,6 +67,8 @@ boolean player1MovingRight = false;
 boolean player2MovingLeft = false;
 boolean player2MovingRight = false;
 
+boolean aiPlaying = false;
+
 PVector force;
 float gravityVal, windLowerVal, windUpperVal;
 ForceRegistry forceRegistry;
@@ -84,7 +86,6 @@ color gameSecondary;
 color gameBackground;
 
 PImage backgroundimg;
-
 
 void setup() {
   fullScreen();
@@ -120,8 +121,17 @@ void draw() {
     player1.draw(world.platforms);
     player2.integrate();
     player2.draw(world.platforms);
+    integrateBlocks();
     drawHitboxes();
 
+  }
+}
+
+void integrateBlocks() {
+  for (Platform platform : world.platforms) {
+    for (Block block : platform.blocks) {
+      block.integrate();
+    } 
   }
 }
 
@@ -213,8 +223,6 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
-  // forceRegistry.add(player1, gravity);
-  // forceRegistry.add(player2, gravity);
   for (Platform platform : world.platforms) {
     for (Block block : platform.blocks) {
       forceRegistry.add(block, gravity);
