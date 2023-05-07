@@ -1,5 +1,6 @@
 import java.io.File;
 import java.awt.geom.Rectangle2D;
+final float MAX_ACCEL = 1.3f ;
 
 final class Player extends Particle {
 
@@ -12,16 +13,9 @@ final class Player extends Particle {
   PImage[] jumpDownFrames;
   PImage[] hitFrames;
 
-  enum PlayerState {
-    IDLE, 
-    ATTACKING, 
-    DYING
-  }
-
   // https://chierit.itch.io/
   // https://luizmelo.itch.io/
   //https://codemanu.itch.io/pixelart-effect-pack
-
 
   //String characterName;
   String[] characters = new String[]{
@@ -46,6 +40,7 @@ final class Player extends Particle {
   float leftLimit, rightLimit;
   float upperLimit, lowerLimit;
   float groundLimit;
+  float velXLimit;
 
   boolean idle = false;
   boolean isAirborne = true;
@@ -66,12 +61,10 @@ final class Player extends Particle {
   ForceRegistry thisRegistry;
   Gravity thisGravity;
 
+  PlayerState state;
   ArrayList<Platform> platforms;
 
-  State state;
-
-
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
@@ -96,18 +89,17 @@ final class Player extends Particle {
     loadTextures(characters[characterIndex]);
     currentFrames = idleFrames;
     this.maxHealth = 100;
+    this.velXLimit = velXLimit;
     this.health = maxHealth;
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-    state = new State(PlayerState.IDLE);
-
     thisRegistry = registry;
     thisGravity = gravity;
 
     thisRegistry.add(this, thisGravity);
-
+    state = PlayerState.IDLE;
   }
 
   void draw(ArrayList<Platform> platforms){
@@ -239,6 +231,7 @@ final class Player extends Particle {
   }
 
 
+
   void drawHitbox(boolean intersects){
     noFill();
     if(intersects)
@@ -246,7 +239,7 @@ final class Player extends Particle {
     else
       stroke(255, 0, 0);
 
-    rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
+    /* rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight()); */
 
     if(this.attacking){
 
@@ -258,9 +251,10 @@ final class Player extends Particle {
       }
 
       attackBox.setRect((float) playerBox.getX() + attackBoxScale, (float) playerBox.getY(), (float) playerBox.getWidth()/2, (float) playerBox.getHeight()/2);
-      rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
+      /* rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight()); */
     }
   }
+
 
   void loadTextures(String characterName){
     // Get the current sketch directory using sketchPath()
@@ -348,8 +342,31 @@ final class Player extends Particle {
     lowerLimit = maxLowerLimit;
   }
 
-  boolean checkOnPlatform(ArrayList<Platform> platforms) {
+  ArrayList<Platform> getJumpablePlatforms(ArrayList<Platform> platforms) {
+    ArrayList<Platform> jumpablePlatforms = new ArrayList<Platform>();
+    for (Platform platform : platforms) {
+      if (position.y - platform.position.y <= playerBox.getWidth() * 2.5 && platform.position.y < position.y) {
+        if (position.x >= platform.position.x && position.x <= platform.position.x + platform.platformWidth) {
+          jumpablePlatforms.add(platform);
+        }
+      }
+    }
+    for (Platform platform : jumpablePlatforms) {
+      for (Block b : platform.blocks) {
+        b.blockColor = color(255, 0, 0);
+      }
+    }
+    for (Platform platform : platforms) {
+      if (!jumpablePlatforms.contains(platform)) {
+        for (Block b : platform.blocks) {
+          b.blockColor = color(48,69,41);
+        }
+      }
+    }
+    return jumpablePlatforms;
+  }
 
+  boolean checkOnPlatform(ArrayList<Platform> platforms) {
     for (Platform platform : platforms) {
       if (position.y == platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE) {
         if (position.x >= platform.position.x && position.x <= platform.position.x + platform.platformWidth) {
@@ -360,18 +377,18 @@ final class Player extends Particle {
     }
     return false;
   }
+
   /**
    * Moves the player left
    */
   void moveLeft() {
-
         if(!attacking && !gettingHit){
-          //idle = false;
-          //currentFrame = 0;
           currentFrames = runFrames;    
          }
 
-    position.x -= moveIncrement;
+    if (velocity.x > -velXLimit) {
+      velocity.x -= moveIncrement;
+    }
     if (position.x <= leftLimit) position.x = leftLimit;
   }
 
@@ -385,7 +402,9 @@ final class Player extends Particle {
         currentFrames = runFrames;  
       }
 
-    position.x += moveIncrement;
+    if (velocity.x < velXLimit) {
+      velocity.x += moveIncrement;
+    }
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
 
@@ -416,5 +435,24 @@ final class Player extends Particle {
       
   }
 
+  void moveLeftToPlayer(PVector otherPos) {
+    position.x += velocity.x;
+        
+    otherPos.normalize() ;
+    otherPos.mult(MAX_ACCEL) ;
+    if (velocity.x < velXLimit) {
+      velocity.x -= otherPos.x;
+    }
+  }
+  
+  void moveRightToPlayer(PVector otherPos) {
+    position.x += velocity.x;
+        
+    otherPos.normalize() ;
+    otherPos.mult(MAX_ACCEL) ;
+    if (velocity.x < velXLimit) {
+      velocity.x += otherPos.x;
+    }
+  }
 
 }

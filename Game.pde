@@ -31,8 +31,9 @@ final int MIN_NUM_PLATFORMS = 15,
 final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
-      PLAYER_MOVE_INCREMENT_PROPORTION = 150,
-      PLAYER_JUMP_INCREMENT_PROPORTION = 50;
+      PLAYER_MOVE_INCREMENT_PROPORTION = 300,
+      PLAYER_JUMP_INCREMENT_PROPORTION = 50,
+      PLAYER_VELX_LIMIT = 15;
 
 final float PLAYER_ANIMATION_SCALE = 2.05;
 
@@ -87,6 +88,12 @@ color gameBackground;
 
 PImage backgroundimg;
 
+enum PlayerState {
+  IDLE, 
+  ATTACKING, 
+  DYING
+}
+
 void setup() {
   fullScreen();
   noSmooth();
@@ -101,14 +108,12 @@ void setup() {
   backgroundimg.resize(displayWidth,displayHeight);
 }
 
-
 void draw() {
   background(backgroundimg);
-  //println(player1.velocity.y);
-  //player1.checkIfAirborne(forceRegistry, gravity);
-  //player2.checkIfAirborne(forceRegistry, gravity);
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
+  /* player2.moveLeftToPlayer(player1.position); */
+  player1.getJumpablePlatforms(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
     end.draw();
   }
@@ -121,9 +126,8 @@ void draw() {
     player1.draw(world.platforms);
     player2.integrate();
     player2.draw(world.platforms);
-    integrateBlocks();
+    /* integrateBlocks(); */
     drawHitboxes();
-
   }
 }
 
@@ -183,8 +187,8 @@ void setupPlayers() {
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 0, forceRegistry, gravity);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, 1, forceRegistry, gravity);
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 0, forceRegistry, gravity);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 1, forceRegistry, gravity);
 }
 
 /**
@@ -285,19 +289,23 @@ void keyReleased(){
     case 'a':
     case 'A':
       player1.movingLeft = false;
+      player1.velocity.x = 0;
       break;
     case 'd':
     case 'D':
       player1.movingRight = false;
+      player1.velocity.x = 0;
       break;
   }
 
   switch (keyCode) {
     case LEFT:
       player2.movingLeft = false;
+      player2.velocity.x = 0;
       break;
     case RIGHT:
       player2.movingRight = false;
+      player2.velocity.x = 0;
       break;
   }
 }
