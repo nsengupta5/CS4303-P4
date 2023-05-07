@@ -112,7 +112,7 @@ void draw() {
   background(backgroundimg);
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
-  /* player2.moveLeftToPlayer(player1.position); */
+  player2.moveAI(player1.position.copy(), world.platforms);
   player1.getJumpablePlatforms(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
     end.draw();

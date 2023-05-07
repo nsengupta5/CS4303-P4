@@ -1,6 +1,9 @@
 import java.io.File;
 import java.awt.geom.Rectangle2D;
-final float MAX_ACCEL = 1.3f ;
+
+final float SLOW_RADIUS = 20f ;
+final float TARGET_RADIUS = 3f ;
+final float DRAG = 0.95f ;
 
 final class Player extends Particle {
 
@@ -63,6 +66,7 @@ final class Player extends Particle {
 
   PlayerState state;
   ArrayList<Platform> platforms;
+  PVector targetVelocity = new PVector(0, 0);
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
     super(x, y, xVel, yVel, invM);
@@ -351,18 +355,6 @@ final class Player extends Particle {
         }
       }
     }
-    for (Platform platform : jumpablePlatforms) {
-      for (Block b : platform.blocks) {
-        b.blockColor = color(255, 0, 0);
-      }
-    }
-    for (Platform platform : platforms) {
-      if (!jumpablePlatforms.contains(platform)) {
-        for (Block b : platform.blocks) {
-          b.blockColor = color(48,69,41);
-        }
-      }
-    }
     return jumpablePlatforms;
   }
 
@@ -435,24 +427,77 @@ final class Player extends Particle {
       
   }
 
-  void moveLeftToPlayer(PVector otherPos) {
-    position.x += velocity.x;
+  /* void moveLeftToPlayer(PVector otherPos) { */
+  /*   PVector targetPos = position.copy().sub(otherPos); */
+  /*   position.x += velocity.x; */
         
-    otherPos.normalize() ;
-    otherPos.mult(MAX_ACCEL) ;
-    if (velocity.x < velXLimit) {
-      velocity.x -= otherPos.x;
-    }
-  }
+  /*   targetPos.normalize() ; */
+  /*   if (velocity.x > -velXLimit) { */
+  /*     velocity.x -= targetPos.x; */
+  /*   } */
+  /*   if (position.x <= leftLimit) position.x = leftLimit; */
+  /* } */
   
-  void moveRightToPlayer(PVector otherPos) {
+  /* void moveRightToPlayer(PVector otherPos) { */
+  /*   PVector targetPos = otherPos.copy().sub(position); */
+        
+  /*   targetPos.normalize() ; */
+  /*   if (velocity.x < velXLimit) { */
+  /*     velocity.x += targetPos.x; */
+  /*   } */
+  /*   if (position.x >= rightLimit) position.x = rightLimit; */
+  /* } */
+
+  void moveLeftToPlayer(PVector otherPos) {
+    PVector targetPos = position.copy().sub(otherPos);
     position.x += velocity.x;
         
-    otherPos.normalize() ;
-    otherPos.mult(MAX_ACCEL) ;
-    if (velocity.x < velXLimit) {
-      velocity.x += otherPos.x;
+    float distance = targetPos.mag() ;
+    // If arrived, no acceleration.
+    if (distance > TARGET_RADIUS) {
+      float targetSpeed = velXLimit;    
+      if (distance <= SLOW_RADIUS)
+        targetSpeed = velXLimit * distance / SLOW_RADIUS ;
+    
+      targetVelocity = targetPos.get() ;
+      targetVelocity.normalize() ;
+      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x;
     }
+    
+    // Bit of drag
+    velocity.x *= DRAG;
   }
 
+  void moveRightToPlayer(PVector otherPos) {
+    PVector targetPos = otherPos.copy().sub(position);
+    position.x += velocity.x;
+        
+    float distance = targetPos.mag() ;
+    // If arrived, no acceleration.
+    if (distance > TARGET_RADIUS) {
+      float targetSpeed = velXLimit;    
+      if (distance <= SLOW_RADIUS)
+        targetSpeed = velXLimit * distance / SLOW_RADIUS ;
+    
+      targetVelocity = targetPos.get() ;
+      targetVelocity.normalize() ;
+      if (velocity.x < velXLimit) velocity.x += targetVelocity.x;
+    }
+    
+    // Bit of drag
+    velocity.x *= DRAG;
+  }
+
+  void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
+    if (otherPos.x < position.x) {
+      moveLeftToPlayer(otherPos);
+    } else if (otherPos.x > position.x) {
+      moveRightToPlayer(otherPos);
+    }
+    ArrayList<Platform> jumpablePlatforms = getJumpablePlatforms(platforms);
+    if (jumpablePlatforms.size() > 0 && otherPos.y + playerBox.getHeight() / 2 < position.y) {
+      velocity.x = 0;
+      jump();
+    }
+  }
 }
