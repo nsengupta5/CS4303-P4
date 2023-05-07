@@ -139,7 +139,6 @@ void integrateBlocks() {
   }
 }
 
-
 void drawHealthBars(){
 
   int proportion = displayWidth/PLAYER_INIT_X_PROPORTION*2;

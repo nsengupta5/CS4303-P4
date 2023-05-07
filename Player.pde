@@ -154,6 +154,7 @@ final class Player extends Particle {
       }
       
     } 
+
     else if(!isAirborne) {
       idle = true;
       //currentFrame = 0;
@@ -426,27 +427,6 @@ final class Player extends Particle {
       }
       
   }
-
-  /* void moveLeftToPlayer(PVector otherPos) { */
-  /*   PVector targetPos = position.copy().sub(otherPos); */
-  /*   position.x += velocity.x; */
-        
-  /*   targetPos.normalize() ; */
-  /*   if (velocity.x > -velXLimit) { */
-  /*     velocity.x -= targetPos.x; */
-  /*   } */
-  /*   if (position.x <= leftLimit) position.x = leftLimit; */
-  /* } */
-  
-  /* void moveRightToPlayer(PVector otherPos) { */
-  /*   PVector targetPos = otherPos.copy().sub(position); */
-        
-  /*   targetPos.normalize() ; */
-  /*   if (velocity.x < velXLimit) { */
-  /*     velocity.x += targetPos.x; */
-  /*   } */
-  /*   if (position.x >= rightLimit) position.x = rightLimit; */
-  /* } */
 
   void moveLeftToPlayer(PVector otherPos) {
     PVector targetPos = position.copy().sub(otherPos);
