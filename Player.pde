@@ -4,13 +4,13 @@ import java.awt.geom.Rectangle2D;
 final class Player extends Particle {
 
   PImage[] currentFrames;
-
   PImage[] idleFrames;
   PImage[] attackFrames;
   PImage[] runFrames; 
   PImage[] deathFrames;
   PImage[] jumpUpFrames;
   PImage[] jumpDownFrames;
+  PImage[] hitFrames;
 
   enum PlayerState {
     IDLE, 
@@ -54,6 +54,7 @@ final class Player extends Particle {
   boolean movingRight = false;
   boolean attacking = false;
   boolean dying = false;
+  boolean gettingHit = false;
   
   int hitboxScale;
   int attackBoxScale;
@@ -144,7 +145,7 @@ final class Player extends Particle {
 
 
     //chosing animation frames
-    if((movingLeft || movingRight || attacking || dying)){
+    if((movingLeft || movingRight || attacking || dying || gettingHit)){
    
       
       if(movingLeft && !dying){
@@ -161,7 +162,7 @@ final class Player extends Particle {
       idle = true;
       //currentFrame = 0;
       currentFrames = idleFrames;
-     }
+    }
 
 
         //if landed on ground or platform
@@ -216,6 +217,16 @@ final class Player extends Particle {
       currentFrames = idleFrames;
     }
 
+    //if getting hit animation is done, go back to idle
+    if(gettingHit && currentFrame == currentFrames.length-1){
+      idle = true;
+      gettingHit = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
+    }
+
+
     //if dying animation is done, set dying to false so game can end
     if(dying && currentFrame == currentFrames.length-1){
       dying = false;
@@ -237,7 +248,7 @@ final class Player extends Particle {
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-if(this.attacking){
+    if(this.attacking){
 
 
       if(!facingRight){
@@ -261,7 +272,7 @@ if(this.attacking){
     String deathDir = sketchDir + "textures/"+characterName+"/png/death/";
     String jumpUpDir = sketchDir + "textures/"+characterName+"/png/jump_up/";
     String jumpDownDir = sketchDir + "textures/"+characterName+"/png/jump_down/";
-
+    String hitDir = sketchDir + "textures/"+characterName+"/png/take_hit/";
 
     idleFrames = new PImage[new File(idleDir).listFiles().length];
     for (int i = 0; i < idleFrames.length; i++) {
@@ -283,7 +294,6 @@ if(this.attacking){
       deathFrames[i] = loadImage(deathDir + "death_" + (i+1) + ".png");
     }
 
-    //print(characterName);
     jumpUpFrames = new PImage[new File(jumpUpDir).listFiles().length];
     for (int i = 0; i < jumpUpFrames.length; i++) {
       jumpUpFrames[i] = loadImage(jumpUpDir + "jump_up_" + (i+1) + ".png");
@@ -292,6 +302,11 @@ if(this.attacking){
     jumpDownFrames = new PImage[new File(jumpDownDir).listFiles().length];
     for (int i = 0; i < jumpDownFrames.length; i++) {
       jumpDownFrames[i] = loadImage(jumpDownDir + "jump_down_" + (i+1) + ".png");
+    }
+
+    hitFrames = new PImage[new File(hitDir).listFiles().length];
+    for (int i = 0; i < hitFrames.length; i++) {
+      hitFrames[i] = loadImage(hitDir + "take_hit_" + (i+1) + ".png");
     }
   }
 
@@ -319,7 +334,7 @@ if(this.attacking){
     float x = position.x;
     float maxLowerLimit = groundLimit;
     for (Platform platform : platforms) {
-  if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
+      if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
         if (position.y + platform.platformHeight < platform.position.y) {
           if(isFalling()){
           float platY = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
@@ -333,7 +348,6 @@ if(this.attacking){
     lowerLimit = maxLowerLimit;
   }
 
-
   boolean checkOnPlatform(ArrayList<Platform> platforms) {
 
     for (Platform platform : platforms) {
@@ -346,14 +360,13 @@ if(this.attacking){
     }
     return false;
   }
-
   /**
    * Moves the player left
    */
   void moveLeft() {
 
-        if(!attacking){
-          idle = false;
+        if(!attacking && !gettingHit){
+          //idle = false;
           //currentFrame = 0;
           currentFrames = runFrames;    
          }
@@ -366,8 +379,8 @@ if(this.attacking){
    * Moves the player right
    */
   void moveRight() {
-      if(!attacking){
-        idle = false;
+      if(!attacking && !gettingHit){
+        //idle = false;
        // currentFrame = 0;
         currentFrames = runFrames;  
       }
@@ -389,5 +402,19 @@ if(this.attacking){
     }
     if (position.y <= 0) position.y = 0;
   }
+
+  void getHit(int damage){
+      if(!gettingHit){
+        idle = false;
+        gettingHit = true;
+        currentFrame = 0;
+        currentFrames = hitFrames;
+
+        if(health > 0)        this.health -=damage;
+        else                  this.health = 0;
+      }
+      
+  }
+
 
 }

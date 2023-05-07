@@ -113,6 +113,7 @@ void draw() {
   }
   else {
     world.draw();
+    checkHit();
     drawHealthBars();
     forceRegistry.updateForces();
     player1.integrate();
@@ -120,6 +121,7 @@ void draw() {
     player2.integrate();
     player2.draw(world.platforms);
     drawHitboxes();
+
   }
 }
 
@@ -211,11 +213,13 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
-  /* for (Platform platform : world.platforms) { */
-  /*   for (Block block : platform.blocks) { */
-  /*     forceRegistry.add(block, gravity); */
-  /*   } */
-  /* } */
+  // forceRegistry.add(player1, gravity);
+  // forceRegistry.add(player2, gravity);
+  for (Platform platform : world.platforms) {
+    for (Block block : platform.blocks) {
+      forceRegistry.add(block, gravity);
+    }
+  }
 }
 
 void keyPressed() { 
@@ -224,22 +228,27 @@ void keyPressed() {
       case ' ':
       if(!player1.attacking ){
         player1.attack();
-        checkHit();
-            checkWinner();
+        //checkHit();
+            //checkWinner();
       }
         break;
       case 'a':
+      case 'A':
         player1.movingLeft = true;
         break;
       case 'd':
+      case 'D':
         player1.movingRight = true;
         break;
+      case 'W':
       case 'w':
         player1.jump();
         break;
       case 'e':
         player1.swapCharacter = true;
         break;
+
+      
     }
 
     switch (keyCode) {
@@ -255,8 +264,8 @@ void keyPressed() {
       case SHIFT:
       if(!player2.attacking){
         player2.attack();
-        checkHit();
-            checkWinner();
+        //checkHit();
+        //checkWinner();
       }
         break;
     }
@@ -266,9 +275,11 @@ void keyPressed() {
 void keyReleased(){
   switch(key) {
     case 'a':
+    case 'A':
       player1.movingLeft = false;
       break;
     case 'd':
+    case 'D':
       player1.movingRight = false;
       break;
   }
@@ -297,15 +308,39 @@ void checkWinner() {
 }
 
 void checkHit(){
-  if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
-    if(player2.health > 0)        player2.health -=10;
-    else                          player2.health = 0;
+
+  // println("1"+ (player1.attacking));
+  // println("2"+ (player1.currentFrame == player1.attackFrames.length/2));
+  // println("3"+ (player1.attackBox.intersects(player2.playerBox)));
+
+  // println();
+  // println();
+  
+  if(player1.attacking 
+  && player1.currentFrame == 2
+  && player1.attackBox.intersects(player2.playerBox) 
+  && !player2.gettingHit){
+
+    //println("hit");
+    player2.getHit(10);
+    //player2.draw(world.platforms);
+
+   checkWinner();
   } 
 
-  if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
-    if(player1.health > 0)  player1.health -=10;
-    else                    player1.health = 0;
+  if(player2.attacking
+  && player2.currentFrame == 4
+  && player2.attackBox.intersects(player1.playerBox) 
+  && !player1.gettingHit){
+
+
+    player1.getHit(20);
+
+   checkWinner();
   }
+
+
+
 }
 
 void drawHitboxes(){
