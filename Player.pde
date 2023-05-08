@@ -57,6 +57,7 @@ final class Player extends Particle {
   boolean gettingHit = false;
   boolean airAttacking = false;
   boolean blocking = false;
+  boolean isAI = false;
   
   int hitboxXScale;
   int hitboxYScale;
@@ -73,7 +74,7 @@ final class Player extends Particle {
   PVector targetVelocity = new PVector(0, 0);
   JSONObject characterJSON;
 
-  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
+  Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity, boolean isAI){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
@@ -95,6 +96,7 @@ final class Player extends Particle {
     this.maxHealth = 100;
     this.velXLimit = velXLimit;
     this.health = maxHealth;
+    this.isAI = isAI;
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, hitboxXScale, hitboxYScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
@@ -155,7 +157,7 @@ final class Player extends Particle {
       
     } 
 
-    else if(!isAirborne) {
+    else if(!isAirborne && !isAI) {
       idle = true;
       //currentFrame = 0;
       currentFrames = idleFrames;

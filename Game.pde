@@ -136,7 +136,7 @@ void draw() {
   }
   else {
     world.draw();
-    checkPlayerCollision();
+    /* checkPlayerCollision(); */
     checkHit();
     drawHealthBars();
     forceRegistry.updateForces();
@@ -203,8 +203,8 @@ void setupPlayers() {
   float playerUpLimit = 0;
   float playerDownLimit = displayHeight - groundHeight - animationHeight / PLAYER_ANIMATION_SCALE;
 
-  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 0, forceRegistry, gravity);
-  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 1, forceRegistry, gravity);
+  player1 = new Player(player1InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 0, forceRegistry, gravity, false);
+  player2 = new Player(player2InitX, playerInitY, PARTICLE_INIT_XVEL, PARTICLE_INIT_YVEL, random(PARTICLE_INVM_LOWER_LIM,PARTICLE_INVM_UPPER_LIM), animationWidth, animationHeight, playerMoveIncrement, playerJumpIncrement, playerLeftLimit, playerRightLimit, playerUpLimit, playerDownLimit, playerDownLimit, PLAYER_VELX_LIMIT, 1, forceRegistry, gravity, true);
 }
 
 /**
