@@ -3,6 +3,7 @@ final class Block extends Particle {
   int row;
   int blockWidth, blockHeight;
   color blockColor;
+  PImage tileImage;
 
   /**
    * Constructor for a Block
@@ -21,11 +22,18 @@ final class Block extends Particle {
     this.blockWidth = blockWidth;
     this.blockHeight = blockHeight;
     this.blockColor = blockColor;
+
+    String sketchDir = sketchPath("");
+    this.tileImage = loadImage(sketchDir + "textures/platform.png", "png");
   }
 
   void draw(){
     fill(blockColor);
     stroke(blockColor);
-    rect(position.x, position.y, blockWidth, blockHeight);
+
+    imageMode(CORNER);
+    // rect(position.x, position.y, blockWidth, blockHeight);
+    image(tileImage, position.x, position.y, blockWidth, blockHeight);
+    imageMode(CENTER);
   }
 }

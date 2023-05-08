@@ -75,6 +75,7 @@ final class Player extends Particle {
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
     super(x, y, xVel, yVel, invM);
+
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
 
@@ -504,7 +505,6 @@ final class Player extends Particle {
   }
 
   void moveLeftToPlayer(PVector otherPos) {
-    facingRight = false;
     PVector targetPos = position.copy().sub(otherPos);
     position.x += velocity.x;
         
@@ -525,7 +525,6 @@ final class Player extends Particle {
   }
 
   void moveRightToPlayer(PVector otherPos) {
-    facingRight = true;
     PVector targetPos = otherPos.copy().sub(position);
     position.x += velocity.x;
         
@@ -546,7 +545,6 @@ final class Player extends Particle {
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
-    currentFrames = runFrames;
     if (otherPos.x < position.x) {
       moveLeftToPlayer(otherPos);
     } else if (otherPos.x > position.x) {
