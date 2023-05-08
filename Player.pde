@@ -11,6 +11,8 @@ final class Player extends Particle {
   PImage[] jumpUpFrames;
   PImage[] jumpDownFrames;
   PImage[] hitFrames;
+  PImage[] airAtkFrames;
+  PImage[] blockFrames;
 
 
   // https://chierit.itch.io/
@@ -51,20 +53,22 @@ final class Player extends Particle {
   boolean attacking = false;
   boolean dying = false;
   boolean gettingHit = false;
+  boolean airAttacking = false;
+  boolean blocking = false;
   
-  int hitboxScale;
+  int hitboxXScale;
+  int hitboxYScale;
+
   int attackBoxScale;
   Rectangle2D playerBox;
   Rectangle2D attackBox;
 
-
-  int monkScale;
-
-  
   ForceRegistry thisRegistry;
   Gravity thisGravity;
 
   ArrayList<Platform> platforms;
+
+  JSONObject characterJSON;
 
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, int characterIndex, ForceRegistry registry, Gravity gravity){
@@ -72,13 +76,9 @@ final class Player extends Particle {
     this.animationWidth = animationWidth;
     this.animationHeight = animationHeight;
 
-    hitboxScale = animationWidth/10;
-    monkScale = hitboxScale*3/10;
+    hitboxXScale = animationWidth/10;
+    hitboxYScale = animationHeight/3;
 
-    //scale monk differently
-    if(characterIndex == 0){
-      this.animationHeight += monkScale;
-    }
 
     this.moveIncrement = moveIncrement;
     this.jumpIncrement = jumpIncrement;
@@ -87,14 +87,13 @@ final class Player extends Particle {
     this.upperLimit = upperLimit;
     this.lowerLimit = lowerLimit;
     this.groundLimit = groundLimit;
-    //this.characterName = characterName;
     this.characterIndex = characterIndex;
     loadTextures(characters[characterIndex]);
     currentFrames = idleFrames;
     this.maxHealth = 100;
     this.health = maxHealth;
 
-    playerBox = new Rectangle2D.Float(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, hitboxScale, hitboxScale);
+    playerBox = new Rectangle2D.Float(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, hitboxXScale, hitboxYScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
     thisRegistry = registry;
@@ -102,6 +101,7 @@ final class Player extends Particle {
 
     thisRegistry.add(this, thisGravity);
 
+    loadJson();
   }
 
   void draw(ArrayList<Platform> platforms){
@@ -116,16 +116,13 @@ final class Player extends Particle {
 
       if(characterIndex >= characters.length){
         characterIndex = 0;
-        this.animationHeight += monkScale;
-      } else if (characterIndex == 1){
-        this.animationHeight -= monkScale;
-      }
+      } 
 
 
       loadTextures(characters[characterIndex]);
+      loadJson();
       swapCharacter = false;
     }
-
 
 
     // update the animation frame if enough game frames have passed
@@ -138,8 +135,8 @@ final class Player extends Particle {
     }
 
 
-    //chosing animation frames
-    if((movingLeft || movingRight || attacking || dying || gettingHit)){
+    //choose idle frames if no other booleans are true
+    if((movingLeft || movingRight || attacking || dying || gettingHit || blocking)){
    
       
       if(movingLeft && !dying){
@@ -147,6 +144,7 @@ final class Player extends Particle {
         facingRight = false;
 
       } else if(movingRight && !dying){
+        
         moveRight();
         facingRight = true;
       }
@@ -164,7 +162,7 @@ final class Player extends Particle {
             isAirborne = false;
             thisRegistry.remove(this, thisGravity);
             this.velocity.y = 0;
-            idle = true;
+            //idle = true;
         }
 
         //if walk off platform
@@ -175,12 +173,22 @@ final class Player extends Particle {
         }
 
         
-      //&& velcocity != 0 for platform, because isAirborne is true when on platform
       if(isAirborne){
-        if(isFalling()){
+        if(attacking && !airAttacking){
+          idle = false;
+          attacking = true;
+          currentFrame = 0;
+          currentFrames = airAtkFrames;
+          airAttacking = true;
+        } else if (gettingHit){
+          idle = false;
+          currentFrames = hitFrames;
+        } else if(!airAttacking) {
+          if(isFalling()){
           currentFrames = jumpDownFrames;
-        } else {
-          currentFrames = jumpUpFrames;
+          } else {
+            currentFrames = jumpUpFrames;
+          }
         }
      }
 
@@ -191,7 +199,8 @@ final class Player extends Particle {
       currentFrame = 0;
     }
 
-    //draw current frame
+
+   //draw current frame
     if(facingRight){
       image(currentFrames[currentFrame], this.position.x, this.position.y, animationWidth, animationHeight);
     } else{
@@ -200,6 +209,8 @@ final class Player extends Particle {
       image(currentFrames[currentFrame], -this.position.x, this.position.y, animationWidth, animationHeight);
       popMatrix();
     }
+    
+ 
 
 
     //if attacking animation is done, go back to idle
@@ -211,10 +222,29 @@ final class Player extends Particle {
       currentFrames = idleFrames;
     }
 
+    //if air attacking animation is done, go back to idle
+    if(airAttacking && currentFrame == currentFrames.length-1){
+      idle = true;
+      airAttacking = false;
+      attacking = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
+    }
+
     //if getting hit animation is done, go back to idle
-    if(gettingHit && currentFrame == currentFrames.length-1){
+    if(gettingHit && currentFrame == currentFrames.length-1 && !dying){
       idle = true;
       gettingHit = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
+    }
+
+    //if blocking animation is done, go back to idle
+    if(blocking && currentFrame == currentFrames.length-1){
+      idle = true;
+      blocking = false;
 
       currentFrame = 0;
       currentFrames = idleFrames;
@@ -227,42 +257,87 @@ final class Player extends Particle {
     }
                
 
-    //update hitbox but dont draw it yet
-    playerBox.setRect(this.position.x-hitboxScale/2, this.position.y+hitboxScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
+   
+    updateHitboxes();
+    drawPlayerHitbox();
 
-
-
-    drawHitbox(false);
 
     
   }
 
+  void loadJson(){
+    String sketchDir = sketchPath("");
+    String jsonDir = sketchDir + "json/characterStats.json";
+    characterJSON = loadJSONObject(jsonDir);
+  }
 
-  void drawHitbox(boolean intersects){
+  
+
+  void updateHitboxes(){
+  //update hitboxes but dont draw it yet
+  
+      JSONArray characters = characterJSON.getJSONArray("characters");
+      JSONObject character = characters.getJSONObject(characterIndex);
+      JSONObject attacks = character.getJSONObject("attacks");
+      JSONObject thisAttack;
+
+      if(airAttacking){
+         thisAttack = attacks.getJSONObject("air");
+      } else {
+          thisAttack = attacks.getJSONObject("normal");  
+      }
+      JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
+
+      int[] hitboxDims = hitboxDim.toIntArray();
+      // println(hitboxDims);
+
+    playerBox.setRect(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
+
+    
+
+    float attackBoxX;
+    float attackBoxY = this.position.y+hitboxYScale/2 + ((float)hitboxDims[1]*hitboxYScale/100);
+    float attackBoxWidth = ((float)hitboxDims[2]*hitboxXScale/100);
+    float attacBoxHeight = ((float)hitboxDims[3]*hitboxYScale/100);
+
+    if(!facingRight){
+      attackBoxX = this.position.x - ((float)hitboxDims[0]*hitboxXScale/100)- attackBoxWidth;
+    } else {
+      attackBoxX = this.position.x + ((float)hitboxDims[0]*hitboxXScale/100);
+    } 
+
+    // attackBox.setRect((float) playerBox.getX() + attackBoxScale, (float) playerBox.getY() + hitboxDims[1], (float) playerBox.getWidth()/2 + hitboxDims[2], (float) playerBox.getHeight()/2 + hitboxDims[3]);
+      attackBox.setRect(attackBoxX, attackBoxY, attackBoxWidth, attacBoxHeight);
+
+  } 
+
+
+  void drawPlayerHitbox(){
     noFill();
-    if(intersects)
+    if(this.gettingHit)
       stroke(0, 255, 0);
     else
       stroke(255, 0, 0);
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-    if(this.attacking){
+    int monkFrame = 2;
+    int knightFrame = 4;
 
-
-      if(!facingRight){
-        attackBoxScale = hitboxScale*-1; 
-      } else {
-        attackBoxScale = hitboxScale*3/2;
-      }
-
-      attackBox.setRect((float) playerBox.getX() + attackBoxScale, (float) playerBox.getY(), (float) playerBox.getWidth()/2, (float) playerBox.getHeight()/2);
-      rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
-    }
+    // if(this.attacking && characterIndex == 0 && currentFrame == monkFrame || this.attacking && characterIndex == 1 && currentFrame == knightFrame){
+    //   rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
+    // }
   }
 
+  void drawAttackHitbox(){
+    noFill();
+    stroke(255, 0, 0);
+    rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
+  }
+
+
   void loadTextures(String characterName){
-    // Get the current sketch directory using sketchPath()
+    // Get the current sketch directory
     String sketchDir = sketchPath("");
 
     String idleDir = sketchDir + "textures/"+characterName+"/png/idle/";
@@ -272,42 +347,32 @@ final class Player extends Particle {
     String jumpUpDir = sketchDir + "textures/"+characterName+"/png/jump_up/";
     String jumpDownDir = sketchDir + "textures/"+characterName+"/png/jump_down/";
     String hitDir = sketchDir + "textures/"+characterName+"/png/take_hit/";
+    String airAtkDir = sketchDir + "textures/"+characterName+"/png/air_atk/";
+    String blockDir = sketchDir + "textures/"+characterName+"/png/defend/";
 
-    idleFrames = new PImage[new File(idleDir).listFiles().length];
-    for (int i = 0; i < idleFrames.length; i++) {
-      idleFrames[i] = loadImage(idleDir + "idle_" + (i+1) + ".png");
-    }
+    idleFrames = loadFrames(idleDir, "idle_", characterName == "monk");
+    attackFrames = loadFrames(attackDir, "1_atk_", characterName == "monk");
+    runFrames = loadFrames(runDir, "run_", characterName == "monk");
+    deathFrames = loadFrames(deathDir, "death_",  characterName == "monk");
+    jumpUpFrames = loadFrames(jumpUpDir, "jump_up_", characterName == "monk");
+    jumpDownFrames = loadFrames(jumpDownDir, "jump_down_", characterName == "monk");
+    hitFrames = loadFrames(hitDir, "take_hit_", characterName == "monk");
+    airAtkFrames = loadFrames(airAtkDir, "air_atk_", characterName == "monk");
+    blockFrames = loadFrames(blockDir, "defend_", characterName == "monk");
 
-    attackFrames = new PImage[new File(attackDir).listFiles().length];
-    for (int i = 0; i < attackFrames.length; i++) { 
-      attackFrames[i] = loadImage(attackDir + "1_atk_" + (i+1) + ".png");
-    }
-
-    runFrames = new PImage[new File(runDir).listFiles().length];
-    for (int i = 0; i < runFrames.length; i++) {
-      runFrames[i] = loadImage(runDir + "run_" + (i+1) + ".png");
-    }
-
-    deathFrames = new PImage[new File(deathDir).listFiles().length];
-    for (int i = 0; i < deathFrames.length; i++) {
-      deathFrames[i] = loadImage(deathDir + "death_" + (i+1) + ".png");
-    }
-
-    jumpUpFrames = new PImage[new File(jumpUpDir).listFiles().length];
-    for (int i = 0; i < jumpUpFrames.length; i++) {
-      jumpUpFrames[i] = loadImage(jumpUpDir + "jump_up_" + (i+1) + ".png");
-    }
-
-    jumpDownFrames = new PImage[new File(jumpDownDir).listFiles().length];
-    for (int i = 0; i < jumpDownFrames.length; i++) {
-      jumpDownFrames[i] = loadImage(jumpDownDir + "jump_down_" + (i+1) + ".png");
-    }
-
-    hitFrames = new PImage[new File(hitDir).listFiles().length];
-    for (int i = 0; i < hitFrames.length; i++) {
-      hitFrames[i] = loadImage(hitDir + "take_hit_" + (i+1) + ".png");
-    }
   }
+
+  PImage[] loadFrames(String dir, String prefix, boolean isMonk) {
+    PImage[] frames = new PImage[new File(dir).listFiles().length];
+    File[] files = new File(dir).listFiles();
+    for (int i = 0; i < frames.length; i++) {
+      frames[i] = loadImage(dir + prefix + (i+1) + ".png");
+      if(isMonk) //monk has a weird texture that needs to be cropped
+      frames[i] = frames[i].get(0, 0, frames[i].width, frames[i].height-6);
+    }
+    return frames;
+  }
+
 
   void attack(){
     if(!attacking){
@@ -315,6 +380,16 @@ final class Player extends Particle {
         attacking = true;
         currentFrame = 0;
         currentFrames = attackFrames;
+    }
+  }
+
+
+  void block(){
+    if(!blocking && !attacking && !isAirborne){
+      idle = false;
+      blocking = true;
+      currentFrame = 0;
+      currentFrames = blockFrames;
     }
   }
 
@@ -364,7 +439,7 @@ final class Player extends Particle {
    */
   void moveLeft() {
 
-        if(!attacking && !gettingHit){
+        if(!attacking && !gettingHit && !blocking){
           //idle = false;
           //currentFrame = 0;
           currentFrames = runFrames;    
@@ -378,7 +453,7 @@ final class Player extends Particle {
    * Moves the player right
    */
   void moveRight() {
-      if(!attacking && !gettingHit){
+      if(!attacking && !gettingHit && !blocking){
         //idle = false;
        // currentFrame = 0;
         currentFrames = runFrames;  
@@ -411,8 +486,7 @@ final class Player extends Particle {
 
         if(health > 0)        this.health -=damage;
         else                  this.health = 0;
-      }
-      
+      } 
   }
 
 

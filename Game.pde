@@ -1,4 +1,5 @@
 import java.awt.geom.*;
+import java.util.Arrays;
 
 // Particle global variables
 final int PARTICLE_INIT_XVEL = 0,
@@ -32,7 +33,7 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_HEIGHT_PROPORTION = 4,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
-      PLAYER_JUMP_INCREMENT_PROPORTION = 50;
+      PLAYER_JUMP_INCREMENT_PROPORTION = 30;
 
 final float PLAYER_ANIMATION_SCALE = 2.05;
 
@@ -57,7 +58,7 @@ final color GAME_PRIMARY = color(48,69,41),
             GAME_BACKGROUND = color(234, 221, 202);
 
 // Frame rate
-final int FRAME_RATE = 25;
+final int FRAME_RATE = 26;
 
 Player player1;
 Player player2;
@@ -66,8 +67,6 @@ boolean player1MovingLeft = false;
 boolean player1MovingRight = false;
 boolean player2MovingLeft = false;
 boolean player2MovingRight = false;
-
-boolean aiPlaying = false;
 
 PVector force;
 float gravityVal, windLowerVal, windUpperVal;
@@ -86,6 +85,10 @@ color gameSecondary;
 color gameBackground;
 
 PImage backgroundimg;
+JSONObject characterJSON;
+
+int playerMoveIncrement;
+
 
 void setup() {
   fullScreen();
@@ -99,14 +102,24 @@ void setup() {
   setupScreens();
   backgroundimg = loadImage("textures/Jungle.png","png");
   backgroundimg.resize(displayWidth,displayHeight);
+
+  loadJson();
 }
+
+
+  void loadJson(){
+    String sketchDir = sketchPath("");
+    String jsonDir = sketchDir + "json/characterStats.json";
+    characterJSON = loadJSONObject(jsonDir);
+  }
+
+
+
 
 
 void draw() {
   background(backgroundimg);
-  //println(player1.velocity.y);
-  //player1.checkIfAirborne(forceRegistry, gravity);
-  //player2.checkIfAirborne(forceRegistry, gravity);
+  // background(#000000);
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
   if (endScreen && !player1.dying && !player2.dying) {
@@ -114,6 +127,7 @@ void draw() {
   }
   else {
     world.draw();
+    checkPlayerCollision();
     checkHit();
     drawHealthBars();
     forceRegistry.updateForces();
@@ -121,17 +135,7 @@ void draw() {
     player1.draw(world.platforms);
     player2.integrate();
     player2.draw(world.platforms);
-    integrateBlocks();
-    drawHitboxes();
 
-  }
-}
-
-void integrateBlocks() {
-  for (Platform platform : world.platforms) {
-    for (Block block : platform.blocks) {
-      block.integrate();
-    } 
   }
 }
 
@@ -176,8 +180,8 @@ void setupPlayers() {
   int player2InitX = displayWidth - animationWidth/2;
   int playerInitY = displayHeight - animationHeight*4;
 
-  int playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
-  int playerJumpIncrement = displayWidth/PLAYER_JUMP_INCREMENT_PROPORTION;
+  playerMoveIncrement = displayWidth/PLAYER_MOVE_INCREMENT_PROPORTION;
+  int playerJumpIncrement = displayHeight/PLAYER_JUMP_INCREMENT_PROPORTION;  //should be displayHeight?
   float playerLeftLimit = 0;
   float playerRightLimit = displayWidth;
   float playerUpLimit = 0;
@@ -223,6 +227,8 @@ void setupForces() {
   drag = new Drag(DRAG_CONST, DRAG_CONST);
   wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
+  // forceRegistry.add(player1, gravity);
+  // forceRegistry.add(player2, gravity);
   for (Platform platform : world.platforms) {
     for (Block block : platform.blocks) {
       forceRegistry.add(block, gravity);
@@ -234,7 +240,7 @@ void keyPressed() {
   if(!endScreen){
     switch(key){
       case ' ':
-      if(!player1.attacking ){
+      if(!player1.attacking && !player1.airAttacking ){
         player1.attack();
         //checkHit();
             //checkWinner();
@@ -252,8 +258,23 @@ void keyPressed() {
       case 'w':
         player1.jump();
         break;
-      case 'e':
+      case 'F':
+      case 'f':
+        player1.block();
+        break;
+      case '/':
+        player2.block();
+        break;
+      case 'o':
         player1.swapCharacter = true;
+        break;
+      case 'p':
+        player2.swapCharacter = true;
+        break;  
+      case 'i':
+        player1.loadJson();
+        player2.loadJson();
+        loadJson();
         break;
 
       
@@ -270,7 +291,7 @@ void keyPressed() {
         player2.jump();
         break;
       case SHIFT:
-      if(!player2.attacking){
+      if(!player2.attacking && !player2.airAttacking){
         player2.attack();
         //checkHit();
         //checkWinner();
@@ -319,53 +340,116 @@ void checkHit(){
 
   // println("1"+ (player1.attacking));
   // println("2"+ (player1.currentFrame == player1.attackFrames.length/2));
-  // println("3"+ (player1.attackBox.intersects(player2.playerBox)));
+  // println("3"+ (player2.attackBox.intersects(player1.playerBox)));
 
   // println();
   // println();
+
+      JSONArray characters = characterJSON.getJSONArray("characters");
+      JSONObject p1character = characters.getJSONObject(player1.characterIndex);
+      JSONObject p1attacks = p1character.getJSONObject("attacks");
+      JSONObject p1thisAttack;
+
+      if(player1.airAttacking){
+        p1thisAttack = p1attacks.getJSONObject("air");
+      } else {
+        p1thisAttack = p1attacks.getJSONObject("normal");  
+      }
+
+
+    int[] p1hitFrames = p1thisAttack.getJSONArray("hitframes").toIntArray();
+    int p1damage = p1thisAttack.getInt("damage");
+
   
   if(player1.attacking 
-  && player1.currentFrame == 2
-  && player1.attackBox.intersects(player2.playerBox) 
-  && !player2.gettingHit){
+  && Arrays.stream(p1hitFrames).anyMatch(i -> i == player1.currentFrame)){
+  
+    player1.drawAttackHitbox();
+    
+    if(player1.attackBox.intersects(player2.playerBox)
+    && !player2.gettingHit){
 
-    //println("hit");
-    player2.getHit(10);
-    //player2.draw(world.platforms);
+   
+    if(player2.blocking && player2.facingRight != player1.facingRight){
+        //play block sound effect
+    } else {
+      player2.getHit(p1damage);
+    
+    checkWinner();
+    }
 
-   checkWinner();
-  } 
+  }
+  }
+
+      JSONObject p2character = characters.getJSONObject(player2.characterIndex);
+      JSONObject p2attacks = p2character.getJSONObject("attacks");
+      JSONObject p2thisAttack;
+
+      if(player2.airAttacking){
+        p2thisAttack = p2attacks.getJSONObject("air");
+      } else {
+        p2thisAttack = p2attacks.getJSONObject("normal");  
+      }
+
+
+    int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
+    int p2damage = p2thisAttack.getInt("damage");
+
+
 
   if(player2.attacking
-  && player2.currentFrame == 4
-  && player2.attackBox.intersects(player1.playerBox) 
-  && !player1.gettingHit){
+  && Arrays.stream(p2hitFrames).anyMatch(i -> i == player2.currentFrame)){
+
+    player2.drawAttackHitbox();
+
+    if(player2.attackBox.intersects(player1.playerBox)
+    && !player1.gettingHit){
 
 
-    player1.getHit(20);
+    if(player1.blocking && player1.facingRight != player2.facingRight){
+      //play block sound effect
+    } else {
+      player1.getHit(p2damage);
 
-   checkWinner();
+    checkWinner();  
+    }
+  }
+
   }
 
 
 
 }
 
-void drawHitboxes(){
-  if(player1.attacking || player2.attacking){
-    if(player1.attacking && player1.attackBox.intersects(player2.playerBox) ){
-      player1.drawHitbox(false);
-      player2.drawHitbox(true);
 
-    } 
-    if (player2.attacking && player2.attackBox.intersects(player1.playerBox)) {
-      player1.drawHitbox(true);
-      player2.drawHitbox(false);
+void checkPlayerCollision(){
+  if(player1.facingRight && player1.movingRight){
+    if(player1.playerBox.intersects(player2.playerBox)){
+      player1.movingRight = false;
+      player1.position.x -= playerMoveIncrement;
+      player2.position.x += playerMoveIncrement;
+    }
+  } else if(!player1.facingRight && player1.movingLeft){
+    if(player1.playerBox.intersects(player2.playerBox)){
+      player1.movingLeft = false;
+      player1.position.x += playerMoveIncrement;
+      player2.position.x -= playerMoveIncrement;
+    }
+  } 
+  
+  if(player2.facingRight && player2.movingRight){
+    if(player2.playerBox.intersects(player1.playerBox)){
+      player2.movingRight = false;
+      player2.position.x -= playerMoveIncrement;
+      player1.position.x += playerMoveIncrement;
+    }
+  } else if(!player2.facingRight && player2.movingLeft){
+    if(player2.playerBox.intersects(player1.playerBox)){
+      player2.movingLeft = false;
+      player2.position.x += playerMoveIncrement;
+      player1.position.x -= playerMoveIncrement;
+    }
+  }
 
-    } 
-  }
-  else {
-    player1.drawHitbox(false);
-    player2.drawHitbox(false);
-  }
+
 }
