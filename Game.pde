@@ -262,8 +262,25 @@ void keyPressed() {
       case 'f':
         player1.block();
         break;
+      case 'E':
+      case 'e':
+        player1.useAbility1();
+        break;
+      case 'R':
+      case 'r':
+        player1.useAbility2();
+        break;
       case '/':
         player2.block();
+        break;
+      case ':':
+      case ';':
+        player2.useAbility1();
+        break;
+      case '\'':
+      case '@':
+      case '"':
+        player2.useAbility2();
         break;
       case 'o':
         player1.swapCharacter = true;
@@ -352,6 +369,10 @@ void checkHit(){
 
       if(player1.airAttacking){
         p1thisAttack = p1attacks.getJSONObject("air");
+      } else if (player1.usingAbility1) {
+        p1thisAttack = p1attacks.getJSONObject("ability1");
+      } else if (player1.usingAbility2) {
+        p1thisAttack = p1attacks.getJSONObject("ability2");
       } else {
         p1thisAttack = p1attacks.getJSONObject("normal");  
       }
@@ -387,13 +408,17 @@ void checkHit(){
 
       if(player2.airAttacking){
         p2thisAttack = p2attacks.getJSONObject("air");
-      } else {
+      } else if(player2.usingAbility1){
+        p2thisAttack = p2attacks.getJSONObject("ability1");
+      } else if(player2.usingAbility2){
+        p2thisAttack = p2attacks.getJSONObject("ability2");
+      }else {
         p2thisAttack = p2attacks.getJSONObject("normal");  
       }
 
 
-    int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
-    int p2damage = p2thisAttack.getInt("damage");
+      int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
+      int p2damage = p2thisAttack.getInt("damage");
 
 
 

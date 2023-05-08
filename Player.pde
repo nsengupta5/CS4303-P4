@@ -13,6 +13,8 @@ final class Player extends Particle {
   PImage[] hitFrames;
   PImage[] airAtkFrames;
   PImage[] blockFrames;
+  PImage[] ability1Frames;
+  PImage[] ability2Frames;
 
 
   // https://chierit.itch.io/
@@ -55,6 +57,10 @@ final class Player extends Particle {
   boolean gettingHit = false;
   boolean airAttacking = false;
   boolean blocking = false;
+  boolean usingAbility1 = false;
+  boolean usingAbility2 = false;
+  boolean usingSpecial = false;
+
   
   int hitboxXScale;
   int hitboxYScale;
@@ -136,7 +142,7 @@ final class Player extends Particle {
 
 
     //choose idle frames if no other booleans are true
-    if((movingLeft || movingRight || attacking || dying || gettingHit || blocking)){
+    if((movingLeft || movingRight || attacking || dying || gettingHit || blocking || usingAbility1 || usingAbility2 || usingSpecial)){
    
       
       if(movingLeft && !dying){
@@ -232,6 +238,27 @@ final class Player extends Particle {
       currentFrames = idleFrames;
     }
 
+    //if ability is done, go back to idle
+    if(usingAbility1 && currentFrame == currentFrames.length-1){
+      idle = true;
+      usingAbility1 = false;
+      attacking = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
+    }
+
+    //if ability is done, go back to idle
+    if(usingAbility2 && currentFrame == currentFrames.length-1){
+      idle = true;
+      usingAbility2 = false;
+      attacking = false;
+
+      currentFrame = 0;
+      currentFrames = idleFrames;
+    }
+
+
     //if getting hit animation is done, go back to idle
     if(gettingHit && currentFrame == currentFrames.length-1 && !dying){
       idle = true;
@@ -283,6 +310,10 @@ final class Player extends Particle {
 
       if(airAttacking){
          thisAttack = attacks.getJSONObject("air");
+      } else if (usingAbility1){
+        thisAttack = attacks.getJSONObject("ability1");
+      } else if (usingAbility2){
+        thisAttack = attacks.getJSONObject("ability2");
       } else {
           thisAttack = attacks.getJSONObject("normal");  
       }
@@ -321,12 +352,7 @@ final class Player extends Particle {
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-    int monkFrame = 2;
-    int knightFrame = 4;
 
-    // if(this.attacking && characterIndex == 0 && currentFrame == monkFrame || this.attacking && characterIndex == 1 && currentFrame == knightFrame){
-    //   rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
-    // }
   }
 
   void drawAttackHitbox(){
@@ -349,6 +375,9 @@ final class Player extends Particle {
     String hitDir = sketchDir + "textures/"+characterName+"/png/take_hit/";
     String airAtkDir = sketchDir + "textures/"+characterName+"/png/air_atk/";
     String blockDir = sketchDir + "textures/"+characterName+"/png/defend/";
+    String ability1Dir = sketchDir + "textures/"+characterName+"/png/2_atk/";
+    String ability2Dir = sketchDir + "textures/"+characterName+"/png/3_atk/";
+
 
     idleFrames = loadFrames(idleDir, "idle_", characterName == "monk");
     attackFrames = loadFrames(attackDir, "1_atk_", characterName == "monk");
@@ -359,6 +388,8 @@ final class Player extends Particle {
     hitFrames = loadFrames(hitDir, "take_hit_", characterName == "monk");
     airAtkFrames = loadFrames(airAtkDir, "air_atk_", characterName == "monk");
     blockFrames = loadFrames(blockDir, "defend_", characterName == "monk");
+    ability1Frames = loadFrames(ability1Dir, "2_atk_", characterName == "monk");
+    ability2Frames = loadFrames(ability2Dir, "3_atk_", characterName == "monk");
 
   }
 
@@ -375,7 +406,7 @@ final class Player extends Particle {
 
 
   void attack(){
-    if(!attacking){
+    if(!attacking && !blocking && !usingAbility1 && !usingAbility2 && !usingSpecial){
         idle = false;
         attacking = true;
         currentFrame = 0;
@@ -385,7 +416,7 @@ final class Player extends Particle {
 
 
   void block(){
-    if(!blocking && !attacking && !isAirborne){
+    if(!blocking && !attacking && !isAirborne && !usingAbility1 && !usingAbility2 && !usingSpecial){
       idle = false;
       blocking = true;
       currentFrame = 0;
@@ -487,6 +518,26 @@ final class Player extends Particle {
         if(health > 0)        this.health -=damage;
         else                  this.health = 0;
       } 
+  }
+
+  void useAbility1(){
+    if(!attacking && !blocking && !usingAbility1 && !usingAbility2 && !usingSpecial && !isAirborne){
+        idle = false;
+        usingAbility1 = true;
+        attacking = true;
+        currentFrame = 0;
+        currentFrames = ability1Frames;
+    }
+  }
+
+   void useAbility2(){
+    if(!attacking && !blocking && !usingAbility1 && !usingAbility2 && !usingSpecial && !isAirborne){
+        idle = false;
+        usingAbility2 = true;
+        attacking = true;
+        currentFrame = 0;
+        currentFrames = ability2Frames;
+    }
   }
 
 
