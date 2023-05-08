@@ -2,7 +2,7 @@ import java.io.File;
 import java.awt.geom.Rectangle2D;
 
 final float SLOW_RADIUS = 20f ;
-final float TARGET_RADIUS = 3f ;
+final float TARGET_RADIUS = 200f ;
 final float DRAG = 0.95f ;
 
 final class Player extends Particle {
@@ -134,16 +134,17 @@ final class Player extends Particle {
       position.y = lowerLimit;
     }
 
-    if (state != PlayerState.IDLE) {
-      if(movingLeft && state != PlayerState.DYING){
-        moveLeft();
-        facingRight = false;
-      } else if(movingRight && state != PlayerState.DYING){
-        moveRight();
-        facingRight = true;
-      }
+    if(movingLeft && state != PlayerState.DYING){
+      state = PlayerState.RUNNING;
+      moveLeft();
+      facingRight = false;
+    } else if(movingRight && state != PlayerState.DYING){
+      state = PlayerState.RUNNING;
+      moveRight();
+      facingRight = true;
     }
-    else if(!isAirborne && !isAI) {
+
+    if(!isAirborne && !isAI && state != PlayerState.ATTACKING && velocity.x == 0) {
       state = PlayerState.IDLE;
     }
 
@@ -434,7 +435,6 @@ final class Player extends Particle {
   void getHit(int damage){
     if(state != PlayerState.STUNNED){
       state = PlayerState.STUNNED;
-
       if(health > 0)        this.health -=damage;
       else                  this.health = 0;
     } 
@@ -442,7 +442,7 @@ final class Player extends Particle {
 
   void moveLeftToPlayer(PVector otherPos) {
     facingRight = false;
-    PVector targetPos = position.copy().sub(otherPos);
+    PVector targetPos = otherPos.copy().sub(position);
     if (velocity.x > -velXLimit) position.x += velocity.x;
 
     float distance = targetPos.mag() ;
@@ -459,11 +459,12 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
+    if (position.x <= leftLimit) position.x = leftLimit;
   }
 
   void moveRightToPlayer(PVector otherPos) {
     facingRight = true;
-    PVector targetPos = otherPos.copy().sub(position);
+    PVector targetPos = position.copy().sub(otherPos);
     if (velocity.x < velXLimit) position.x += velocity.x;
 
     float distance = targetPos.mag() ;
@@ -480,21 +481,26 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
+    if (position.x >= rightLimit) position.x = rightLimit;
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
-    state = PlayerState.RUNNING;
-    if (otherPos.x == position.x)
-      println("same x");
-    if (otherPos.x < position.x) {
-      moveLeftToPlayer(otherPos);
-    } else if (otherPos.x > position.x) {
-      moveRightToPlayer(otherPos);
+    float playerDist = dist(position.x, position.y, otherPos.x, otherPos.y);
+    if (playerDist > TARGET_RADIUS) {
+      state = PlayerState.RUNNING;
+      if (otherPos.x < position.x) {
+        moveLeftToPlayer(otherPos);
+      } else if (otherPos.x > position.x) {
+        moveRightToPlayer(otherPos);
+      }
+      ArrayList<Platform> jumpablePlatforms = getJumpablePlatforms(platforms);
+      if (jumpablePlatforms.size() > 0 && otherPos.y + playerBox.getHeight() / 2 < position.y) {
+        velocity.x = 0;
+        jump();
+      }
     }
-    ArrayList<Platform> jumpablePlatforms = getJumpablePlatforms(platforms);
-    if (jumpablePlatforms.size() > 0 && otherPos.y + playerBox.getHeight() / 2 < position.y) {
+    else {
       velocity.x = 0;
-      jump();
     }
   }
 
@@ -527,6 +533,24 @@ final class Player extends Particle {
       case BLOCKING:
         currentFrames = blockFrames;
         break;
+    }
+  }
+
+  void findBestState(Player otherPlayer) {
+    float playerDist = dist(position.x, position.y, otherPlayer.position.x, otherPlayer.position.y);
+    if (playerDist < TARGET_RADIUS) {
+      float blockProbablity = random(0, 1);
+      float attackProbablity = random(0, 1);
+      if (health < health * 0.5) {
+        if (blockProbablity < 0.5) {
+          state = PlayerState.BLOCKING;
+        } else {
+          state = PlayerState.ATTACKING;
+        }
+      } 
+    }
+    else {
+      state = PlayerState.RUNNING;
     }
   }
 }

@@ -261,10 +261,12 @@ void keyPressed() {
       case 'a':
       case 'A':
         player1.movingLeft = true;
+        player1.state = PlayerState.RUNNING;
         break;
       case 'd':
       case 'D':
         player1.movingRight = true;
+        player1.state = PlayerState.RUNNING;
         break;
       case 'W':
       case 'w':
@@ -328,10 +330,12 @@ void keyReleased(){
   switch (keyCode) {
     case LEFT:
       player2.movingLeft = false;
+      player2.state = PlayerState.IDLE;
       player2.velocity.x = 0;
       break;
     case RIGHT:
       player2.movingRight = false;
+      player2.state = PlayerState.IDLE;
       player2.velocity.x = 0;
       break;
   }
