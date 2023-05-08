@@ -34,7 +34,7 @@ final int PLAYER_WIDTH_PROPORTION = 2,
       PLAYER_INIT_X_PROPORTION = 20,
       PLAYER_MOVE_INCREMENT_PROPORTION = 150,
       PLAYER_JUMP_INCREMENT_PROPORTION = 30,
-      PLAYER_VELX_LIMIT = 15;
+      PLAYER_VELX_LIMIT = 10;
 
 final float PLAYER_ANIMATION_SCALE = 2.05;
 
@@ -54,9 +54,9 @@ final int BUTTON_WIDTH_PROPORTION = 8,
 
 // Color global variables
 final color GAME_PRIMARY = color(48,69,41),
-            GAME_SECONDARY = color(203, 133, 133),
-            GAME_WHITE = color(250, 250, 250),
-            GAME_BACKGROUND = color(234, 221, 202);
+      GAME_SECONDARY = color(203, 133, 133),
+      GAME_WHITE = color(250, 250, 250),
+      GAME_BACKGROUND = color(234, 221, 202);
 
 // Frame rate
 final int FRAME_RATE = 26;
@@ -72,9 +72,7 @@ boolean player2MovingRight = false;
 PVector force;
 float gravityVal, windLowerVal, windUpperVal;
 ForceRegistry forceRegistry;
-Wind wind;
 Gravity gravity;
-Drag drag;
 
 World world;
 
@@ -94,7 +92,13 @@ int playerMoveIncrement;
 enum PlayerState {
   IDLE, 
   ATTACKING, 
-  DYING
+  RUNNING,
+  DYING,
+  JUMPING,
+  FALLING,
+  STUNNED,
+  AIR_ATTACKING,
+  BLOCKING,
 }
 
 void setup() {
@@ -114,24 +118,22 @@ void setup() {
 }
 
 
-  void loadJson(){
-    String sketchDir = sketchPath("");
-    String jsonDir = sketchDir + "json/characterStats.json";
-    characterJSON = loadJSONObject(jsonDir);
-  }
-
-
-
-
+void loadJson(){
+  String sketchDir = sketchPath("");
+  String jsonDir = sketchDir + "json/characterStats.json";
+  characterJSON = loadJSONObject(jsonDir);
+}
 
 void draw() {
   background(backgroundimg);
   // background(#000000);
+  player1.updateState();
+  player2.updateState();
   player1.checkHoveringOnPlatform(world.platforms);
   player2.checkHoveringOnPlatform(world.platforms);
   player2.moveAI(player1.position.copy(), world.platforms);
   player1.getJumpablePlatforms(world.platforms);
-  if (endScreen && !player1.dying && !player2.dying) {
+  if (endScreen && player1.state != PlayerState.DYING && player2.state != PlayerState.DYING) {
     end.draw();
   }
   else {
@@ -240,11 +242,7 @@ void setupForces() {
   windUpperVal = WIND_MID_CONST;
   forceRegistry = new ForceRegistry() ;  
   gravity = new Gravity(new PVector(0f, gravityVal));
-  drag = new Drag(DRAG_CONST, DRAG_CONST);
-  wind = new Wind(new PVector(random(windLowerVal,windUpperVal), 0));
   force = new PVector(0, 0);
-  // forceRegistry.add(player1, gravity);
-  // forceRegistry.add(player2, gravity);
   for (Platform platform : world.platforms) {
     for (Block block : platform.blocks) {
       forceRegistry.add(block, gravity);
@@ -256,11 +254,9 @@ void keyPressed() {
   if(!endScreen){
     switch(key){
       case ' ':
-      if(!player1.attacking && !player1.airAttacking ){
-        player1.attack();
-        //checkHit();
-            //checkWinner();
-      }
+        if (player1.state != PlayerState.ATTACKING && player1.state != PlayerState.AIR_ATTACKING) {
+          player1.attack();
+        }
         break;
       case 'a':
       case 'A':
@@ -293,7 +289,7 @@ void keyPressed() {
         loadJson();
         break;
 
-      
+
     }
 
     switch (keyCode) {
@@ -307,14 +303,12 @@ void keyPressed() {
         player2.jump();
         break;
       case SHIFT:
-      if(!player2.attacking && !player2.airAttacking){
-        player2.attack();
-        //checkHit();
-        //checkWinner();
-      }
+        if (player2.state != PlayerState.ATTACKING && player2.state != PlayerState.AIR_ATTACKING) {
+          player2.attack();
+        }
         break;
     }
-   }
+  }
 }
 
 void keyReleased(){
@@ -357,88 +351,72 @@ void checkWinner() {
 }
 
 void checkHit(){
+  JSONArray characters = characterJSON.getJSONArray("characters");
+  JSONObject p1character = characters.getJSONObject(player1.characterIndex);
+  JSONObject p1attacks = p1character.getJSONObject("attacks");
+  JSONObject p1thisAttack;
 
-  // println("1"+ (player1.attacking));
-  // println("2"+ (player1.currentFrame == player1.attackFrames.length/2));
-  // println("3"+ (player2.attackBox.intersects(player1.playerBox)));
-
-  // println();
-  // println();
-
-      JSONArray characters = characterJSON.getJSONArray("characters");
-      JSONObject p1character = characters.getJSONObject(player1.characterIndex);
-      JSONObject p1attacks = p1character.getJSONObject("attacks");
-      JSONObject p1thisAttack;
-
-      if(player1.airAttacking){
-        p1thisAttack = p1attacks.getJSONObject("air");
-      } else {
-        p1thisAttack = p1attacks.getJSONObject("normal");  
-      }
+  if(player1.state == PlayerState.AIR_ATTACKING){
+    p1thisAttack = p1attacks.getJSONObject("air");
+  } else {
+    p1thisAttack = p1attacks.getJSONObject("normal");  
+  }
 
 
-    int[] p1hitFrames = p1thisAttack.getJSONArray("hitframes").toIntArray();
-    int p1damage = p1thisAttack.getInt("damage");
+  int[] p1hitFrames = p1thisAttack.getJSONArray("hitframes").toIntArray();
+  int p1damage = p1thisAttack.getInt("damage");
 
-  
-  if(player1.attacking 
-  && Arrays.stream(p1hitFrames).anyMatch(i -> i == player1.currentFrame)){
-  
+
+  if(player1.state == PlayerState.ATTACKING
+      && Arrays.stream(p1hitFrames).anyMatch(i -> i == player1.currentFrame)){
+
     player1.drawAttackHitbox();
-    
+
     if(player1.attackBox.intersects(player2.playerBox)
-    && !player2.gettingHit){
+        && player2.state != PlayerState.STUNNED){
 
-   
-    if(player2.blocking && player2.facingRight != player1.facingRight){
+      if (player2.state == PlayerState.BLOCKING && player2.facingRight != player1.facingRight) {
         //play block sound effect
-    } else {
-      player2.getHit(p1damage);
-    
-    checkWinner();
-    }
-
-  }
-  }
-
-      JSONObject p2character = characters.getJSONObject(player2.characterIndex);
-      JSONObject p2attacks = p2character.getJSONObject("attacks");
-      JSONObject p2thisAttack;
-
-      if(player2.airAttacking){
-        p2thisAttack = p2attacks.getJSONObject("air");
       } else {
-        p2thisAttack = p2attacks.getJSONObject("normal");  
+        player2.getHit(p1damage);
+        checkWinner();
       }
+    }
+  }
+
+  JSONObject p2character = characters.getJSONObject(player2.characterIndex);
+  JSONObject p2attacks = p2character.getJSONObject("attacks");
+  JSONObject p2thisAttack;
+
+  if(player2.state == PlayerState.AIR_ATTACKING){
+    p2thisAttack = p2attacks.getJSONObject("air");
+  } else {
+    p2thisAttack = p2attacks.getJSONObject("normal");  
+  }
 
 
-    int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
-    int p2damage = p2thisAttack.getInt("damage");
+  int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
+  int p2damage = p2thisAttack.getInt("damage");
 
 
 
-  if(player2.attacking
-  && Arrays.stream(p2hitFrames).anyMatch(i -> i == player2.currentFrame)){
+  if(player2.state == PlayerState.ATTACKING
+      && Arrays.stream(p2hitFrames).anyMatch(i -> i == player2.currentFrame)){
 
     player2.drawAttackHitbox();
 
     if(player2.attackBox.intersects(player1.playerBox)
-    && !player1.gettingHit){
+        && player1.state != PlayerState.STUNNED){
 
 
-    if(player1.blocking && player1.facingRight != player2.facingRight){
-      //play block sound effect
-    } else {
-      player1.getHit(p2damage);
-
-    checkWinner();  
+      if (player1.state == PlayerState.BLOCKING && player1.facingRight != player2.facingRight) {
+        //play block sound effect
+      } else {
+        player1.getHit(p2damage);
+        checkWinner();  
+      }
     }
   }
-
-  }
-
-
-
 }
 
 
@@ -456,7 +434,7 @@ void checkPlayerCollision(){
       player2.position.x -= playerMoveIncrement;
     }
   } 
-  
+
   if(player2.facingRight && player2.movingRight){
     if(player2.playerBox.intersects(player1.playerBox)){
       player2.movingRight = false;
@@ -470,6 +448,4 @@ void checkPlayerCollision(){
       player1.position.x -= playerMoveIncrement;
     }
   }
-
-
 }

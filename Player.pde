@@ -47,16 +47,10 @@ final class Player extends Particle {
   float groundLimit;
   float velXLimit;
 
-  boolean idle = false;
   boolean isAirborne = true;
   boolean facingRight = true;
   boolean movingLeft = false;
   boolean movingRight = false;
-  boolean attacking = false;
-  boolean dying = false;
-  boolean gettingHit = false;
-  boolean airAttacking = false;
-  boolean blocking = false;
   boolean isAI = false;
   
   int hitboxXScale;
@@ -140,66 +134,46 @@ final class Player extends Particle {
       position.y = lowerLimit;
     }
 
-
-    //choose idle frames if no other booleans are true
-    if((movingLeft || movingRight || attacking || dying || gettingHit || blocking)){
-   
-      
-      if(movingLeft && !dying){
+    if (state != PlayerState.IDLE) {
+      if(movingLeft && state != PlayerState.DYING){
         moveLeft();
         facingRight = false;
-
-      } else if(movingRight && !dying){
-        
+      } else if(movingRight && state != PlayerState.DYING){
         moveRight();
         facingRight = true;
       }
-      
-    } 
-
+    }
     else if(!isAirborne && !isAI) {
-      idle = true;
-      //currentFrame = 0;
-      currentFrames = idleFrames;
+      state = PlayerState.IDLE;
     }
 
+    //if landed on ground or platform
+    if((position.y >= groundLimit || checkOnPlatform(platforms)) && isAirborne) {
+      isAirborne = false;
+      thisRegistry.remove(this, thisGravity);
+      this.velocity.y = 0;
+    }
 
-        //if landed on ground or platform
-        if((position.y >= groundLimit || checkOnPlatform(platforms)) && isAirborne) {
-            isAirborne = false;
-            thisRegistry.remove(this, thisGravity);
-            this.velocity.y = 0;
-            //idle = true;
+    //if walk off platform
+    if(!isAirborne && !checkOnPlatform(platforms) && position.y < groundLimit){
+      isAirborne = true;
+      state = PlayerState.FALLING;
+      thisRegistry.add(this, thisGravity);
+    }
+
+    if (isAirborne) {
+      if (state == PlayerState.ATTACKING) {
+        state = PlayerState.AIR_ATTACKING;
+      }
+      else if (state != PlayerState.AIR_ATTACKING) {
+        if (isFalling()) {
+          state = PlayerState.FALLING;
         }
-
-        //if walk off platform
-        if(!isAirborne && !checkOnPlatform(platforms) && position.y < groundLimit){
-          isAirborne = true;
-          idle = false;
-          thisRegistry.add(this, thisGravity);
+        else {
+          state = PlayerState.JUMPING;
         }
-
-        
-      if(isAirborne){
-        if(attacking && !airAttacking){
-          idle = false;
-          attacking = true;
-          currentFrame = 0;
-          currentFrames = airAtkFrames;
-          airAttacking = true;
-        } else if (gettingHit){
-          idle = false;
-          currentFrames = hitFrames;
-        } else if(!airAttacking) {
-          if(isFalling()){
-          currentFrames = jumpDownFrames;
-          } else {
-            currentFrames = jumpUpFrames;
-          }
-        }
-     }
-
-
+      }
+    }
 
     //looping animation
     if(currentFrame >= currentFrames.length){
@@ -207,7 +181,7 @@ final class Player extends Particle {
     }
 
 
-   //draw current frame
+    //draw current frame
     if(facingRight){
       image(currentFrames[currentFrame], this.position.x, this.position.y, animationWidth, animationHeight);
     } else{
@@ -216,60 +190,30 @@ final class Player extends Particle {
       image(currentFrames[currentFrame], -this.position.x, this.position.y, animationWidth, animationHeight);
       popMatrix();
     }
-    
- 
-
 
     //if attacking animation is done, go back to idle
-    if(attacking && currentFrame == currentFrames.length-1){
-      idle = true;
-      attacking = false;
+    if (state == PlayerState.ATTACKING && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
+    } 
 
-      currentFrame = 0;
-      currentFrames = idleFrames;
+    if (state == PlayerState.AIR_ATTACKING && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
     }
 
-    //if air attacking animation is done, go back to idle
-    if(airAttacking && currentFrame == currentFrames.length-1){
-      idle = true;
-      airAttacking = false;
-      attacking = false;
-
-      currentFrame = 0;
-      currentFrames = idleFrames;
+    if (state == PlayerState.STUNNED && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
     }
 
-    //if getting hit animation is done, go back to idle
-    if(gettingHit && currentFrame == currentFrames.length-1 && !dying){
-      idle = true;
-      gettingHit = false;
-
-      currentFrame = 0;
-      currentFrames = idleFrames;
+    if (state == PlayerState.BLOCKING && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
     }
 
-    //if blocking animation is done, go back to idle
-    if(blocking && currentFrame == currentFrames.length-1){
-      idle = true;
-      blocking = false;
-
-      currentFrame = 0;
-      currentFrames = idleFrames;
+    if (state == PlayerState.DYING && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
     }
 
-
-    //if dying animation is done, set dying to false so game can end
-    if(dying && currentFrame == currentFrames.length-1){
-      dying = false;
-    }
-               
-
-   
     updateHitboxes();
     drawPlayerHitbox();
-
-
-    
   }
 
   void loadJson(){
@@ -278,29 +222,29 @@ final class Player extends Particle {
     characterJSON = loadJSONObject(jsonDir);
   }
 
-  
+
 
   void updateHitboxes(){
-  //update hitboxes but dont draw it yet
-  
-      JSONArray characters = characterJSON.getJSONArray("characters");
-      JSONObject character = characters.getJSONObject(characterIndex);
-      JSONObject attacks = character.getJSONObject("attacks");
-      JSONObject thisAttack;
+    //update hitboxes but dont draw it yet
 
-      if(airAttacking){
-         thisAttack = attacks.getJSONObject("air");
-      } else {
-          thisAttack = attacks.getJSONObject("normal");  
-      }
-      JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
+    JSONArray characters = characterJSON.getJSONArray("characters");
+    JSONObject character = characters.getJSONObject(characterIndex);
+    JSONObject attacks = character.getJSONObject("attacks");
+    JSONObject thisAttack;
 
-      int[] hitboxDims = hitboxDim.toIntArray();
-      // println(hitboxDims);
+    if(state == PlayerState.AIR_ATTACKING){
+      thisAttack = attacks.getJSONObject("air");
+    } else {
+      thisAttack = attacks.getJSONObject("normal");  
+    }
+    JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
+
+    int[] hitboxDims = hitboxDim.toIntArray();
+    // println(hitboxDims);
 
     playerBox.setRect(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
-    
+
 
     float attackBoxX;
     float attackBoxY = this.position.y+hitboxYScale/2 + ((float)hitboxDims[1]*hitboxYScale/100);
@@ -314,14 +258,14 @@ final class Player extends Particle {
     } 
 
     // attackBox.setRect((float) playerBox.getX() + attackBoxScale, (float) playerBox.getY() + hitboxDims[1], (float) playerBox.getWidth()/2 + hitboxDims[2], (float) playerBox.getHeight()/2 + hitboxDims[3]);
-      attackBox.setRect(attackBoxX, attackBoxY, attackBoxWidth, attacBoxHeight);
+    attackBox.setRect(attackBoxX, attackBoxY, attackBoxWidth, attacBoxHeight);
 
   } 
 
 
   void drawPlayerHitbox(){
     noFill();
-    if(this.gettingHit)
+    if(state == PlayerState.STUNNED)
       stroke(0, 255, 0);
     else
       stroke(255, 0, 0);
@@ -368,28 +312,21 @@ final class Player extends Particle {
     for (int i = 0; i < frames.length; i++) {
       frames[i] = loadImage(dir + prefix + (i+1) + ".png");
       if(isMonk) //monk has a weird texture that needs to be cropped
-      frames[i] = frames[i].get(0, 0, frames[i].width, frames[i].height-6);
+        frames[i] = frames[i].get(0, 0, frames[i].width, frames[i].height-6);
     }
     return frames;
   }
 
 
   void attack(){
-    if(!attacking){
-        idle = false;
-        attacking = true;
-        currentFrame = 0;
-        currentFrames = attackFrames;
+    if(state != PlayerState.ATTACKING){
+      state = PlayerState.ATTACKING;
     }
   }
 
-
-  void block(){
-    if(!blocking && !attacking && !isAirborne){
-      idle = false;
-      blocking = true;
-      currentFrame = 0;
-      currentFrames = blockFrames;
+  void block() {
+    if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && !isAirborne) {
+      state = PlayerState.BLOCKING;
     }
   }
 
@@ -398,10 +335,7 @@ final class Player extends Particle {
   }
 
   void die(){
-    idle = false;
-    dying = true;
-    currentFrame = 0;
-    currentFrames = deathFrames;
+    state = PlayerState.DYING;
   }
 
   void checkHoveringOnPlatform(ArrayList<Platform> platforms) {
@@ -411,10 +345,10 @@ final class Player extends Particle {
       if (x >= platform.position.x && x <= platform.position.x + platform.platformWidth) {
         if (position.y + platform.platformHeight < platform.position.y) {
           if(isFalling()){
-          float platY = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
-          lowerLimit = platY;
-          if (platY < maxLowerLimit) 
-            maxLowerLimit = platY;
+            float platY = platform.position.y - animationHeight / PLAYER_ANIMATION_SCALE;
+            lowerLimit = platY;
+            if (platY < maxLowerLimit) 
+              maxLowerLimit = platY;
           }
         }
       }
@@ -446,17 +380,26 @@ final class Player extends Particle {
     return false;
   }
 
+  Platform getNearestPlatform(ArrayList<Platform> platforms) {
+    Platform minDistancePlatform = null;
+    float minDistance = 100000;
+    for (Platform platform : platforms) {
+      float distance = Math.abs(position.x - platform.position.x);
+      if (distance < minDistance) {
+        minDistance = distance;
+        minDistancePlatform = platform;
+      }
+    }
+    return minDistancePlatform;
+  }
+
   /**
    * Moves the player left
    */
   void moveLeft() {
-
-        if(!attacking && !gettingHit && !blocking){
-          //idle = false;
-          //currentFrame = 0;
-          currentFrames = runFrames;    
-         }
-
+    if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && state != PlayerState.STUNNED) {
+      state = PlayerState.RUNNING;
+    }
     if (velocity.x > -velXLimit) {
       velocity.x -= moveIncrement;
     }
@@ -467,11 +410,9 @@ final class Player extends Particle {
    * Moves the player right
    */
   void moveRight() {
-      if(!attacking && !gettingHit && !blocking){
-        //idle = false;
-       // currentFrame = 0;
-        currentFrames = runFrames;  
-      }
+    if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && state != PlayerState.STUNNED) {
+      state = PlayerState.RUNNING;
+    }
 
     if (velocity.x < velXLimit) {
       velocity.x += moveIncrement;
@@ -479,49 +420,43 @@ final class Player extends Particle {
     if (position.x >= rightLimit) position.x = rightLimit;
   }  
 
-
   void jump() {
     if (!isAirborne) {
       velocity.y = 0;
       velocity.y -= jumpIncrement;
       isAirborne = true;
-      idle = false;
-      currentFrame = 0;
-      currentFrames = jumpUpFrames;
+      state = PlayerState.JUMPING;
       thisRegistry.add(this, thisGravity);
     }
     if (position.y <= 0) position.y = 0;
   }
 
   void getHit(int damage){
-      if(!gettingHit){
-        idle = false;
-        gettingHit = true;
-        currentFrame = 0;
-        currentFrames = hitFrames;
+    if(state != PlayerState.STUNNED){
+      state = PlayerState.STUNNED;
 
-        if(health > 0)        this.health -=damage;
-        else                  this.health = 0;
-      } 
+      if(health > 0)        this.health -=damage;
+      else                  this.health = 0;
+    } 
   }
 
   void moveLeftToPlayer(PVector otherPos) {
     facingRight = false;
     PVector targetPos = position.copy().sub(otherPos);
-    position.x += velocity.x;
-        
+    if (velocity.x > -velXLimit) position.x += velocity.x;
+
     float distance = targetPos.mag() ;
     // If arrived, no acceleration.
     if (distance > TARGET_RADIUS) {
-      float targetSpeed = velXLimit;    
+      float targetSpeed = velocity.x;    
       if (distance <= SLOW_RADIUS)
-        targetSpeed = velXLimit * distance / SLOW_RADIUS ;
-    
+        targetSpeed = velocity.x * distance / SLOW_RADIUS ;
+
       targetVelocity = targetPos.get() ;
       targetVelocity.normalize() ;
-      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x;
+      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x / 2.5;
     }
-    
+
     // Bit of drag
     velocity.x *= DRAG;
   }
@@ -529,26 +464,28 @@ final class Player extends Particle {
   void moveRightToPlayer(PVector otherPos) {
     facingRight = true;
     PVector targetPos = otherPos.copy().sub(position);
-    position.x += velocity.x;
-        
+    if (velocity.x < velXLimit) position.x += velocity.x;
+
     float distance = targetPos.mag() ;
     // If arrived, no acceleration.
     if (distance > TARGET_RADIUS) {
-      float targetSpeed = velXLimit;    
+      float targetSpeed = velocity.x;    
       if (distance <= SLOW_RADIUS)
-        targetSpeed = velXLimit * distance / SLOW_RADIUS ;
-    
+        targetSpeed = velocity.x * distance / SLOW_RADIUS ;
+
       targetVelocity = targetPos.get() ;
       targetVelocity.normalize() ;
-      if (velocity.x < velXLimit) velocity.x += targetVelocity.x;
+      if (velocity.x < velXLimit) velocity.x += targetVelocity.x / 2.5;
     }
-    
+
     // Bit of drag
     velocity.x *= DRAG;
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
-    currentFrames = runFrames;
+    state = PlayerState.RUNNING;
+    if (otherPos.x == position.x)
+      println("same x");
     if (otherPos.x < position.x) {
       moveLeftToPlayer(otherPos);
     } else if (otherPos.x > position.x) {
@@ -558,6 +495,38 @@ final class Player extends Particle {
     if (jumpablePlatforms.size() > 0 && otherPos.y + playerBox.getHeight() / 2 < position.y) {
       velocity.x = 0;
       jump();
+    }
+  }
+
+  void updateState() {
+    switch (state) {
+      case IDLE:
+        currentFrames = idleFrames;
+        break;
+      case ATTACKING:
+        currentFrames = airAtkFrames;
+        break;
+      case RUNNING:
+        currentFrames = runFrames;
+        break;
+      case DYING:
+        currentFrames = deathFrames;
+        break;
+      case JUMPING:
+        currentFrames = jumpUpFrames;
+        break;
+      case FALLING:
+        currentFrames = jumpDownFrames;
+        break;
+      case STUNNED:
+        currentFrames = hitFrames;
+        break;
+      case AIR_ATTACKING:
+        currentFrames = airAtkFrames;
+        break;
+      case BLOCKING:
+        currentFrames = blockFrames;
+        break;
     }
   }
 }
