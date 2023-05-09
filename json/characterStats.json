@@ -40,7 +40,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -54,7 +55,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -68,7 +70,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ]
         }
       },
@@ -115,28 +118,34 @@
         "ability1": {
           "damage": 10,
           "hitframes": [
-            1,
             2,
-            3
+            3,
+            4,
+            5,
+            6,
+            7
           ],
           "attackBoxDim": [
-            1,
-            2,
-            3
+            -200,
+            -25,
+            450,
+            125
           ],
           "cooldown": 10
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
+            3,
+            4,
+            5,
+            6
           ],
           "attackBoxDim": [
-            1,
-            2,
-            3
+            50,
+            -60,
+            275,
+            150
           ],
           "cooldown": 10
         },
@@ -204,7 +213,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -218,7 +228,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -287,7 +298,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -301,7 +313,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -315,7 +328,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ]
         }
       },
@@ -371,7 +385,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -385,7 +400,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -399,7 +415,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ]
         }
       },
@@ -452,12 +469,14 @@
           "hitframes": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 0
         },
@@ -471,7 +490,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ],
           "cooldown": 10
         },
@@ -485,7 +505,8 @@
           "attackBoxDim": [
             1,
             2,
-            3
+            3,
+            4
           ]
         }
       },

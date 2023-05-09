@@ -17,6 +17,8 @@ final class Player extends Particle {
   PImage[] hitFrames;
   PImage[] airAtkFrames;
   PImage[] blockFrames;
+  PImage[] ability1Frames;
+  PImage[] ability2Frames;
 
   // https://chierit.itch.io/
   // https://luizmelo.itch.io/
@@ -67,7 +69,7 @@ final class Player extends Particle {
   ArrayList<Platform> platforms;
   PVector targetVelocity = new PVector(0, 0);
   JSONObject characterJSON;
-  int coolDownFrame = -1;
+  float coolDownFrame = -1;
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity, boolean isAI){
     super(x, y, xVel, yVel, invM);
@@ -110,8 +112,7 @@ final class Player extends Particle {
     //update world
     this.platforms = platforms;
 
-    if (isAI)
-      println(state);
+
     //change character
     if(swapCharacter){
       characterIndex++;
@@ -136,22 +137,37 @@ final class Player extends Particle {
       position.y = lowerLimit;
     }
 
-    if(movingLeft && state != PlayerState.DYING && !isAI){
+    if(movingLeft && state != PlayerState.DYING){
       state = PlayerState.RUNNING;
       moveLeft();
       facingRight = false;
-    } else if(movingRight && state != PlayerState.DYING && !isAI){
+    } else if(movingRight && state != PlayerState.DYING){
       state = PlayerState.RUNNING;
       moveRight();
       facingRight = true;
     }
 
-    if(!isAirborne && 
-        state != PlayerState.ATTACKING && 
-        state != PlayerState.BLOCKING && 
-        state != PlayerState.DYING &&
-        state != PlayerState.FLEEING && 
-        velocity.x == 0) {
+    /* //choose idle frames if no other booleans are true */
+    /* if((movingLeft || movingRight || attacking || dying || gettingHit || blocking || usingAbility1 || usingAbility2 || usingSpecial)){ */
+   
+      
+    /*   if(movingLeft && !dying){ */
+    /*     moveLeft(); */
+    /*     facingRight = false; */
+
+    /*   } else if(movingRight && !dying){ */
+    /*     moveRight(); */
+    /*     facingRight = true; */
+    /*   } */
+      
+    /* } */ 
+    /* else if(!isAirborne) { */
+    /*   idle = true; */
+    /*   //currentFrame = 0; */
+    /*   currentFrames = idleFrames; */
+    /* } */
+
+    if(!isAirborne && state != PlayerState.DYING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.STUNNED && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && velocity.x == 0) {
       state = PlayerState.IDLE;
     }
 
@@ -211,6 +227,14 @@ final class Player extends Particle {
     if (state == PlayerState.STUNNED && currentFrame == currentFrames.length-1) {
       state = PlayerState.IDLE;
     }
+    
+    if (state == PlayerState.ATTACKING_ABILITY_ONE && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
+    }
+
+    if (state == PlayerState.ATTACKING_ABILITY_TWO && currentFrame == currentFrames.length-1) {
+      state = PlayerState.IDLE;
+    }
 
     if (state == PlayerState.BLOCKING && currentFrame == currentFrames.length-1) {
       state = PlayerState.IDLE;
@@ -221,7 +245,7 @@ final class Player extends Particle {
     }
 
     updateHitboxes();
-    /* drawPlayerHitbox(); */
+    drawPlayerHitbox();
   }
 
   void loadJson(){
@@ -239,13 +263,19 @@ final class Player extends Particle {
     JSONObject character = characters.getJSONObject(characterIndex);
     JSONObject attacks = character.getJSONObject("attacks");
     JSONObject thisAttack;
-
-    if(state == PlayerState.AIR_ATTACKING){
+      if(state == PlayerState.AIR_ATTACKING){
       thisAttack = attacks.getJSONObject("air");
-    } else {
+    } 
+    else if (state == PlayerState.ATTACKING_ABILITY_ONE) {
+      thisAttack = attacks.getJSONObject("ability1");
+    }
+    else if (state == PlayerState.ATTACKING_ABILITY_TWO) {
+      thisAttack = attacks.getJSONObject("ability2");
+    }
+    else {
       thisAttack = attacks.getJSONObject("normal");  
     }
-    JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
+      JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
 
     int[] hitboxDims = hitboxDim.toIntArray();
     // println(hitboxDims);
@@ -279,6 +309,7 @@ final class Player extends Particle {
       stroke(255, 0, 0);
 
     rect((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
+
   }
 
   void drawAttackHitbox(){
@@ -301,6 +332,9 @@ final class Player extends Particle {
     String hitDir = sketchDir + "textures/"+characterName+"/png/take_hit/";
     String airAtkDir = sketchDir + "textures/"+characterName+"/png/air_atk/";
     String blockDir = sketchDir + "textures/"+characterName+"/png/defend/";
+    String ability1Dir = sketchDir + "textures/"+characterName+"/png/2_atk/";
+    String ability2Dir = sketchDir + "textures/"+characterName+"/png/3_atk/";
+
 
     idleFrames = loadFrames(idleDir, "idle_", characterName == "monk");
     attackFrames = loadFrames(attackDir, "1_atk_", characterName == "monk");
@@ -311,6 +345,8 @@ final class Player extends Particle {
     hitFrames = loadFrames(hitDir, "take_hit_", characterName == "monk");
     airAtkFrames = loadFrames(airAtkDir, "air_atk_", characterName == "monk");
     blockFrames = loadFrames(blockDir, "defend_", characterName == "monk");
+    ability1Frames = loadFrames(ability1Dir, "2_atk_", characterName == "monk");
+    ability2Frames = loadFrames(ability2Dir, "3_atk_", characterName == "monk");
 
   }
 
@@ -327,13 +363,13 @@ final class Player extends Particle {
 
 
   void attack(){
-    if(state != PlayerState.ATTACKING){
+    if(state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO){
       state = PlayerState.ATTACKING;
     }
   }
 
   void block() {
-    if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && !isAirborne) {
+    if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
       state = PlayerState.BLOCKING;
     }
   }
@@ -343,6 +379,7 @@ final class Player extends Particle {
   }
 
   void die(){
+
     state = PlayerState.DYING;
   }
 
@@ -445,6 +482,18 @@ final class Player extends Particle {
       if(health > 0)        this.health -=damage;
       else                  this.health = 0;
     } 
+  }
+
+   void useAbility1(){
+    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+      state = PlayerState.ATTACKING_ABILITY_ONE;
+    }
+  }
+
+   void useAbility2(){
+    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+      state = PlayerState.ATTACKING_ABILITY_TWO;
+    }
   }
 
   void moveLeftToPlayer(PVector otherPos) {
@@ -590,9 +639,8 @@ final class Player extends Particle {
         currentFrames = idleFrames;
         break;
       case ATTACKING:
-        currentFrames = airAtkFrames;
+        currentFrames = attackFrames;
         break;
-      case FLEEING:
       case RUNNING:
         currentFrames = runFrames;
         break;
@@ -611,11 +659,17 @@ final class Player extends Particle {
       case AIR_ATTACKING:
         currentFrames = airAtkFrames;
         break;
+      case ATTACKING_ABILITY_ONE:
+        currentFrames = ability1Frames;
+        break;
+      case ATTACKING_ABILITY_TWO:
+        currentFrames = ability2Frames;
+        break;
       case BLOCKING:
         currentFrames = blockFrames;
         break;
     }
-  }
+  } 
 
   void findBestState(Player otherPlayer) {
     float playerDist = dist(position.x, position.y, otherPlayer.position.x, otherPlayer.position.y);
