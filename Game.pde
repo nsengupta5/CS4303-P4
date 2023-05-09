@@ -101,6 +101,7 @@ JSONObject characterJSON;
 
 int playerMoveIncrement;
 
+boolean debug = false;
 
 enum PlayerState {
   IDLE, 
@@ -383,16 +384,20 @@ void keyPressed() {
         player2.useAbility2();
         break;
       case 'o':
-        player1.swapCharacter = true;
+        if(debug)
+          player1.swapCharacter = true;
         break;
       case 'p':
-        player2.swapCharacter = true;
+        if(debug)
+          player2.swapCharacter = true;
         break;  
       case 'i':
-        player1.loadJson();
-        player2.loadJson();
-        loadJson();
-        break;
+        if(debug){
+          player1.loadJson();
+          player2.loadJson();
+          loadJson();
+        }
+          break;
 
 
     }
@@ -487,7 +492,8 @@ void checkHit(){
 
   if((player1.state == PlayerState.ATTACKING || player1.state == PlayerState.ATTACKING_ABILITY_ONE || player1.state == PlayerState.ATTACKING_ABILITY_TWO || player1.state == PlayerState.AIR_ATTACKING)
       && Arrays.stream(p1hitFrames).anyMatch(i -> i == player1.currentFrame)){
-
+      
+    if(debug)
     player1.drawAttackHitbox();
 
     if(player1.attackBox.intersects(player2.playerBox)
@@ -526,6 +532,7 @@ void checkHit(){
   if((player2.state == PlayerState.ATTACKING || player2.state == PlayerState.ATTACKING_ABILITY_ONE || player2.state == PlayerState.ATTACKING_ABILITY_TWO || player2.state == PlayerState.AIR_ATTACKING)
       && Arrays.stream(p2hitFrames).anyMatch(i -> i == player2.currentFrame)){
 
+    if(debug)
     player2.drawAttackHitbox();
 
     if(player2.attackBox.intersects(player1.playerBox)

@@ -40,8 +40,8 @@ final class Menu {
     this.playerTwoIndex = 1;
     backIcon = loadImage("back_icon.png");
 
-    twoPlayer = new Button(buttonInitX, buttonInitY, buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "MULTIPLAYER");
-    onePlayer = new Button(buttonInitX, getNewRowY(1), buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "SINGLE PLAYER");
+    twoPlayer = new Button(buttonInitX, buttonInitY, buttonWidth *3/2, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "MULTIPLAYER (Player vs Player)");
+    onePlayer = new Button(buttonInitX, getNewRowY(1), buttonWidth *3/2, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "SINGLE PLAYER (Player vs AI)");
   }
 
   void draw() {
@@ -61,7 +61,7 @@ final class Menu {
     String characterName = characters[playerOneIndex];
     playerOneIcon = loadImage("./textures/" + characterName + "/" + characterName + ".png");
     float xVal = displayWidth / 5 + iconSize / 2 - 100;
-    text("Player 1", xVal, displayHeight / 2 - 150);
+    text("Player 1, choose with W and S", xVal, displayHeight / 2 - 150);
     image(playerOneIcon, displayWidth / 5, displayHeight / 2, iconSize, iconSize);
     text(characterName.substring(0, 1).toUpperCase() + characterName.substring(1), xVal, displayHeight / 2 + 150);
     text("(" + (playerOneIndex + 1) + "/6)",xVal, displayHeight / 2 + 200);
@@ -71,7 +71,7 @@ final class Menu {
     String characterName = characters[playerTwoIndex];
     playerTwoIcon = loadImage("./textures/" + characterName + "/" + characterName + ".png");
     float xVal = displayWidth / 5 * 4 + iconSize / 2 - 100;
-    text("Player 2", xVal, displayHeight / 2 - 150);
+    text("Player 2, choose with UP and DOWN arrows", xVal, displayHeight / 2 - 150);
     text(characterName.substring(0, 1).toUpperCase() + characterName.substring(1), xVal, displayHeight / 2 + 150);
     image(playerTwoIcon, displayWidth / 5 * 4, displayHeight / 2, iconSize, iconSize);
     text(characterName.substring(0, 1).toUpperCase() + characterName.substring(1), xVal, displayHeight / 2 + 150);

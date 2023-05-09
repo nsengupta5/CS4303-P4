@@ -5,6 +5,8 @@ final float SLOW_RADIUS = 20f ;
 final float TARGET_RADIUS = 200f ;
 final float DRAG = 0.95f ;
 
+
+
 final class Player extends Particle {
 
   PImage[] currentFrames;
@@ -74,6 +76,8 @@ final class Player extends Particle {
   int ability1Timer;
   int ability2Timer;
   int maxTimer;
+  boolean debug = false;
+  
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity, boolean isAI){
     super(x, y, xVel, yVel, invM);
@@ -257,7 +261,8 @@ final class Player extends Particle {
     }
 
     updateHitboxes();
-    drawPlayerHitbox();
+    if(debug)
+      drawPlayerHitbox();
 
     if(ability1Timer < maxTimer)
       ability1Timer+= 2.5;
