@@ -31,32 +31,53 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
           ],
           "attackBoxDim": [
-            1,
-            2,
-            3,
-            4
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
@@ -92,7 +113,7 @@
       "name": "knight",
       "attacks": {
         "normal": {
-          "damage": 15,
+          "damage": 10,
           "hitframes": [
             4
           ],
@@ -116,7 +137,7 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
             2,
             3,
@@ -192,7 +213,7 @@
           ]
         },
         "air": {
-          "damage": 10,
+          "damage": 5,
           "hitframes": [
            3
           ],
@@ -204,32 +225,54 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
@@ -264,7 +307,7 @@
       "name": "leaf",
       "attacks": {
         "normal": {
-          "damage": 25,
+          "damage": 10,
           "hitframes": [
             4,
             5
@@ -277,8 +320,12 @@
           ]
         },
         "air": {
-          "damage": 10,
+          "damage": 5,
           "hitframes": [
+            3,
+            4,
+            5,
+            6,
             7
           ],
           "attackBoxDim": [
@@ -289,32 +336,54 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            -25,
+            -50,
+            200,
+            150
           ],
           "cooldown": 10
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            -50,
+            -150,
+            200,
+            150
           ],
           "cooldown": 10
         },
@@ -362,7 +431,7 @@
           ]
         },
         "air": {
-          "damage": 15,
+          "damage": 5,
           "hitframes": [
             2,
             3,
@@ -376,32 +445,54 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },
@@ -450,7 +541,7 @@
           ]
         },
         "air": {
-          "damage": 10,
+          "damage": 5,
           "hitframes": [
             1,
             2,
@@ -465,33 +556,54 @@
           ]
         },
         "ability1": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
           ],
           "attackBoxDim": [
-            1,
-            2,
-            3,
-            4
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 0
         },
         "ability2": {
-          "damage": 10,
+          "damage": 20,
           "hitframes": [
-            1,
-            2,
-            3
-          ],
-          "attackBoxDim": [
-            1,
             2,
             3,
-            4
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "attackBoxDim": [
+            50,
+            -60,
+            200,
+            150
           ],
           "cooldown": 10
         },

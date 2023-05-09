@@ -165,35 +165,92 @@ void draw() {
     }
     world.draw();
     checkHit();
-    drawHealthBars();
+    drawHUD();
     forceRegistry.updateForces();
     player1.integrate();
     player1.draw(world.platforms);
     player2.integrate();
     player2.draw(world.platforms);
+    /* integrateBlocks(); */
   }
 }
 
-void drawHealthBars(){
 
-  int proportion = displayWidth/PLAYER_INIT_X_PROPORTION*2;
+void drawHUD(){
+
+  String[] characters = new String[]{
+    "monk",
+    "knight",
+    "water",
+    "leaf",
+    "metal",
+    "wind"};
+
+
+  int xproportion = displayWidth/PLAYER_INIT_X_PROPORTION*2;
+  int yproportion = displayHeight/PLAYER_INIT_X_PROPORTION*3;
+
+  String p1CharacterName = characters[player1.characterIndex];
+  String p2CharacterName = characters[player2.characterIndex];
+
+  String sketchDir = sketchPath("");
+  PImage p1Face = loadImage(sketchDir + "textures/" + p1CharacterName + "/" + p1CharacterName + ".png");
+  PImage p2Face = loadImage(sketchDir + "textures/" + p2CharacterName + "/" + p2CharacterName + ".png");
+
+  imageMode(CORNER);
+  image(p1Face, xproportion/8, yproportion/8, xproportion, yproportion);
+  imageMode(CENTER);
+  
 
   //draw player 1 health bar from health out of max health
   stroke(#ff0000);
   noFill();
-  rect(proportion/3, proportion/3, player1.maxHealth * proportion/75, proportion/8);
+  rect(xproportion/8, yproportion/3 + yproportion, player1.maxHealth * yproportion/90, yproportion/8);
   stroke(#ff0000);
   fill(#ff0000);
-  rect(proportion/3, proportion/3, player1.health * proportion/75, proportion/8);
+  rect(xproportion/8, yproportion/3 + yproportion, player1.health * xproportion/90, yproportion/8);
+
+
+
+stroke(#FEBE00);
+noFill();
+rect(xproportion/8 + xproportion, yproportion/6 + yproportion, yproportion/8, -player1.maxTimer * yproportion/player1.maxTimer);
+rect(xproportion/8 + xproportion*1.3, yproportion/6 + yproportion, yproportion/8, -player1.maxTimer * yproportion/player1.maxTimer);
+stroke(#FEBE00);
+fill(#FEBE00);
+rect(xproportion/8 + xproportion, yproportion/6 + yproportion, yproportion/8, -player1.ability1Timer * yproportion/player1.maxTimer);
+rect(xproportion/8 + xproportion *1.3, yproportion/6 + yproportion, yproportion/8, -player1.ability2Timer * yproportion/player1.maxTimer);
+
+
+      imageMode(CORNER);
+      pushMatrix();
+      scale( -1, 1 );
+      image(p2Face, ((displayWidth) - xproportion/8)*-1, yproportion/8, xproportion, yproportion);
+      
+      popMatrix();
+      imageMode(CENTER);
 
   //draw player 2 health bar from health out of max health
   stroke(#ff0000);
   noFill();
-  rect(displayWidth - proportion/3 - player2.maxHealth * proportion/75, proportion/3, player2.maxHealth * proportion/75, proportion/8);
+  rect(displayWidth - xproportion/8 - player2.maxHealth * xproportion/90, yproportion/3 + yproportion, player2.maxHealth * xproportion/90, yproportion/8);
   stroke(#ff0000);
   fill(#ff0000);
-  rect(displayWidth - proportion/3 - player2.health * proportion/75, proportion/3, player2.health * proportion/75, proportion/8);
+  rect(displayWidth - xproportion/8 - player2.health * xproportion/90, yproportion/3 + yproportion, player2.health * xproportion/90, yproportion/8);
+
+stroke(#FEBE00);
+noFill();
+rect(displayWidth - xproportion/8 - xproportion*1.2, yproportion/6 + yproportion, yproportion/8, -player2.maxTimer * yproportion/player2.maxTimer);
+rect(displayWidth  - xproportion*1.6, yproportion/6 + yproportion, yproportion/8, -player2.maxTimer * yproportion/player2.maxTimer);
+stroke(#FEBE00);
+fill(#FEBE00);
+rect(displayWidth - xproportion/8 - xproportion*1.2, yproportion/6 + yproportion, yproportion/8, -player2.ability1Timer * yproportion/player2.maxTimer);
+rect(displayWidth - xproportion *1.6, yproportion/6 + yproportion, yproportion/8, -player2.ability2Timer * yproportion/player2.maxTimer);
+
 }
+
+
+
 
 /**
  * Sets up the theme colors
@@ -525,6 +582,10 @@ void resetGame() {
   player2.position.x = displayWidth - animationWidth/2;
   player1.position.y = displayHeight - animationHeight*4;
   player2.position.y = displayHeight - animationHeight*4;
+  player1.ability1Timer = player1.maxTimer;
+  player1.ability2Timer = player1.maxTimer;
+  player2.ability1Timer = player2.maxTimer;
+  player2.ability2Timer = player2.maxTimer;
 }
 
 /**

@@ -71,6 +71,10 @@ final class Player extends Particle {
   JSONObject characterJSON;
   float coolDownFrame = -1;
 
+  int ability1Timer;
+  int ability2Timer;
+  int maxTimer;
+
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity, boolean isAI){
     super(x, y, xVel, yVel, invM);
     this.animationWidth = animationWidth;
@@ -94,6 +98,10 @@ final class Player extends Particle {
     this.velXLimit = velXLimit;
     this.health = maxHealth;
     this.isAI = isAI;
+    this.maxTimer = 1000;
+    this.ability1Timer = this.maxTimer;
+    this.ability2Timer = this.maxTimer;
+    
 
     playerBox = new Rectangle2D.Float(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, hitboxXScale, hitboxYScale);
     attackBox = new Rectangle2D.Float((float) playerBox.getX(), (float) playerBox.getY(), (float) playerBox.getWidth(), (float) playerBox.getHeight());
@@ -148,6 +156,26 @@ final class Player extends Particle {
       moveRight();
       facingRight = true;
     }
+
+    /* //choose idle frames if no other booleans are true */
+    /* if((movingLeft || movingRight || attacking || dying || gettingHit || blocking || usingAbility1 || usingAbility2 || usingSpecial)){ */
+   
+      
+    /*   if(movingLeft && !dying){ */
+    /*     moveLeft(); */
+    /*     facingRight = false; */
+
+    /*   } else if(movingRight && !dying){ */
+    /*     moveRight(); */
+    /*     facingRight = true; */
+    /*   } */
+      
+    /* } */ 
+    /* else if(!isAirborne) { */
+    /*   idle = true; */
+    /*   //currentFrame = 0; */
+    /*   currentFrames = idleFrames; */
+    /* } */
 
     if(!isAirborne && state != PlayerState.DYING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.STUNNED && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && velocity.x == 0) {
       state = PlayerState.IDLE;
@@ -211,10 +239,12 @@ final class Player extends Particle {
     }
     
     if (state == PlayerState.ATTACKING_ABILITY_ONE && currentFrame == currentFrames.length-1) {
+      ability1Timer = 0;
       state = PlayerState.IDLE;
     }
 
     if (state == PlayerState.ATTACKING_ABILITY_TWO && currentFrame == currentFrames.length-1) {
+      ability2Timer = 0;
       state = PlayerState.IDLE;
     }
 
@@ -227,7 +257,18 @@ final class Player extends Particle {
     }
 
     updateHitboxes();
-    /* drawPlayerHitbox(); */
+    drawPlayerHitbox();
+
+    if(ability1Timer < maxTimer)
+      ability1Timer+= 2.5;
+    else if(ability1Timer >= maxTimer)
+      ability1Timer = maxTimer;
+
+    if(ability2Timer < maxTimer)
+      ability2Timer+= 2.5;
+    else if (ability2Timer >= maxTimer)
+      ability2Timer = maxTimer;
+    
   }
 
   void loadJson(){
@@ -250,6 +291,8 @@ final class Player extends Particle {
     } 
     else if (state == PlayerState.ATTACKING_ABILITY_ONE) {
       thisAttack = attacks.getJSONObject("ability1");
+      if (!isAI)
+        println(thisAttack);
     }
     else if (state == PlayerState.ATTACKING_ABILITY_TWO) {
       thisAttack = attacks.getJSONObject("ability2");
@@ -260,6 +303,7 @@ final class Player extends Particle {
       JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
 
     int[] hitboxDims = hitboxDim.toIntArray();
+    // println(hitboxDims);
 
     playerBox.setRect(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
@@ -296,6 +340,7 @@ final class Player extends Particle {
     stroke(255, 0, 0);
     rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
   }
+
 
   void loadTextures(String characterName){
     // Get the current sketch directory
@@ -347,14 +392,16 @@ final class Player extends Particle {
   }
 
   void useAbility1(){
-    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+    if (ability1Timer == maxTimer && state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
       state = PlayerState.ATTACKING_ABILITY_ONE;
+      //ability1Timer = 0;
     }
   }
 
   void useAbility2(){
-    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+    if (ability2Timer == maxTimer && state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
       state = PlayerState.ATTACKING_ABILITY_TWO;
+      //ability2Timer = 0;
     }
   }
 
@@ -673,19 +720,24 @@ final class Player extends Particle {
             state = PlayerState.BLOCKING;
           } 
         }
-        else if (coolDownFrame + 25 < frameCount) {
+        else if (coolDownFrame + 15 < frameCount) {
           if (attackProbablity > 0.7){
             float attackChoice = random(0, 1);
-            if (attackChoice < 0.3)
-              state = PlayerState.ATTACKING;
-            else if (attackChoice < 0.6)
-              state = PlayerState.ATTACKING_ABILITY_ONE;
-            else
-              state = PlayerState.ATTACKING_ABILITY_TWO;
-            coolDownFrame = frameCount;
+            
+         
+          if(attackChoice < 0.8){
+              attack();
+          } else {
+              if(ability1Timer == maxTimer && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.ATTACKING)
+              useAbility1();
+            else if(ability2Timer == maxTimer && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.ATTACKING)
+              useAbility2();
+
           }
+            coolDownFrame = frameCount;
         }
       }
+    }
     }
     else {
       if (fleeProbablity > 0.3) {
