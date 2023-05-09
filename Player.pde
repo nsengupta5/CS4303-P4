@@ -149,26 +149,6 @@ final class Player extends Particle {
       facingRight = true;
     }
 
-    /* //choose idle frames if no other booleans are true */
-    /* if((movingLeft || movingRight || attacking || dying || gettingHit || blocking || usingAbility1 || usingAbility2 || usingSpecial)){ */
-   
-      
-    /*   if(movingLeft && !dying){ */
-    /*     moveLeft(); */
-    /*     facingRight = false; */
-
-    /*   } else if(movingRight && !dying){ */
-    /*     moveRight(); */
-    /*     facingRight = true; */
-    /*   } */
-      
-    /* } */ 
-    /* else if(!isAirborne) { */
-    /*   idle = true; */
-    /*   //currentFrame = 0; */
-    /*   currentFrames = idleFrames; */
-    /* } */
-
     if(!isAirborne && state != PlayerState.DYING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.STUNNED && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && velocity.x == 0) {
       state = PlayerState.IDLE;
     }
@@ -247,7 +227,7 @@ final class Player extends Particle {
     }
 
     updateHitboxes();
-    drawPlayerHitbox();
+    /* drawPlayerHitbox(); */
   }
 
   void loadJson(){
@@ -270,8 +250,6 @@ final class Player extends Particle {
     } 
     else if (state == PlayerState.ATTACKING_ABILITY_ONE) {
       thisAttack = attacks.getJSONObject("ability1");
-      if (!isAI)
-        println(thisAttack);
     }
     else if (state == PlayerState.ATTACKING_ABILITY_TWO) {
       thisAttack = attacks.getJSONObject("ability2");
@@ -282,7 +260,6 @@ final class Player extends Particle {
       JSONArray hitboxDim = thisAttack.getJSONArray("attackBoxDim");
 
     int[] hitboxDims = hitboxDim.toIntArray();
-    // println(hitboxDims);
 
     playerBox.setRect(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
 
@@ -319,7 +296,6 @@ final class Player extends Particle {
     stroke(255, 0, 0);
     rect((float) attackBox.getX(), (float) attackBox.getY(), (float) attackBox.getWidth(), (float) attackBox.getHeight());
   }
-
 
   void loadTextures(String characterName){
     // Get the current sketch directory
@@ -697,7 +673,7 @@ final class Player extends Particle {
             state = PlayerState.BLOCKING;
           } 
         }
-        else if (coolDownFrame + 15 < frameCount) {
+        else if (coolDownFrame + 25 < frameCount) {
           if (attackProbablity > 0.7){
             float attackChoice = random(0, 1);
             if (attackChoice < 0.3)

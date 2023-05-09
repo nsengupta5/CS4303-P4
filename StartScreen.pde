@@ -7,7 +7,7 @@ final class StartScreen {
   Button endButton;
   Button helpButton;
 
-  int logoInitX, logoInitY;
+  float logoInitX, logoInitY;
   boolean startedGame = false;
   PImage logo;
 
@@ -25,8 +25,8 @@ final class StartScreen {
    * @param logoInitX The logo's x coordinate
    * @param logoInitY The logo's y coordinate
    */
-  public StartScreen (float buttonInitX, float buttonInitY, int buttonWidth, int buttonHeight, int buttonRadius, color buttonColor, color buttonHoverColor, color buttonTextColor, int buttonGap, int logoInitX, int logoInitY) {
-    /* logo = loadImage("tankStrikeLogo.png"); */
+  public StartScreen (float buttonInitX, float buttonInitY, int buttonWidth, int buttonHeight, int buttonRadius, color buttonColor, color buttonHoverColor, color buttonTextColor, int buttonGap, float logoInitX, float logoInitY) {
+    logo = loadImage("logo.png");
     this.logoInitX = logoInitX;
     this.logoInitY = logoInitY;
     startButton = new Button(buttonInitX, buttonInitY, buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "START GAME");
@@ -38,7 +38,7 @@ final class StartScreen {
   }
 
   void draw(){
-    /* image(logo, logoInitX, logoInitY); */
+    image(logo, logoInitX, logoInitY);
     if (startedGame) {
       // If a game is currently running, show the resume and main screen button
       startButton.setInactive();

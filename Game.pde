@@ -6,9 +6,9 @@ final int PARTICLE_INIT_XVEL = 0,
       PARTICLE_INIT_YVEL = 0;
 
 // Logo global variable
-final int LOGO_INIT_X_PROPORTION = 3,
-          LOGO_INIT_Y_PROPORTION = 6;
-
+final float LOGO_INIT_X_PROPORTION = 1.95,
+          LOGO_INIT_Y_PROPORTION = 3,
+          ICON_SIZE = 200;
 
 final float PARTICLE_INVM_LOWER_LIM = 0.001f,
       PARTICLE_INVM_UPPER_LIM = 0.005f;
@@ -45,7 +45,7 @@ final float PLAYER_ANIMATION_SCALE = 2.05;
 
 // Screen button global variables
 final float START_BUTTON_INIT_X_PROPORTION = 2.25,
-      START_BUTTON_INIT_Y_PROPORTION = 2.5,
+      START_BUTTON_INIT_Y_PROPORTION = 2.2,
       SETTINGS_BUTTON_INIT_X_PROPORTION = 2.75,
       SETTINGS_BUTTON_INIT_Y_PROPORTION = 5,
       END_BUTTON_INIT_X_PROPORTION = 2.3,
@@ -73,6 +73,7 @@ boolean player1MovingLeft = false;
 boolean player1MovingRight = false;
 boolean player2MovingLeft = false;
 boolean player2MovingRight = false;
+boolean aiPlaying = false;
 
 PVector force;
 float gravityVal, windLowerVal, windUpperVal;
@@ -84,9 +85,12 @@ World world;
 Help help;
 EndScreen end;
 StartScreen start;
+Menu menu;
+
 boolean endScreen = false;
 boolean startScreen = true;
 boolean helpScreen = false;
+boolean menuScreen = false;
 
 color gamePrimary;
 color gameSecondary;
@@ -144,6 +148,9 @@ void draw() {
   else if (helpScreen) {
     help.draw();
   }
+  else if (menuScreen) {
+    menu.draw();
+  }
   else if (endScreen && player1.state != PlayerState.DYING && player2.state != PlayerState.DYING) {
     end.draw();
   }
@@ -152,11 +159,11 @@ void draw() {
     player2.updateState();
     player1.checkHoveringOnPlatform(world.platforms);
     player2.checkHoveringOnPlatform(world.platforms);
-    player2.moveAI(player1.position.copy(), world.platforms);
-    player2.findBestState(player1);
-    player1.getJumpablePlatforms(world.platforms);
+    if (aiPlaying) {
+      player2.moveAI(player1.position.copy(), world.platforms);
+      player2.findBestState(player1);
+    }
     world.draw();
-    /* checkPlayerCollision(); */
     checkHit();
     drawHealthBars();
     forceRegistry.updateForces();
@@ -164,15 +171,6 @@ void draw() {
     player1.draw(world.platforms);
     player2.integrate();
     player2.draw(world.platforms);
-    /* integrateBlocks(); */
-  }
-}
-
-void integrateBlocks() {
-  for (Platform platform : world.platforms) {
-    for (Block block : platform.blocks) {
-      block.integrate();
-    } 
   }
 }
 
@@ -250,10 +248,11 @@ void setupScreens() {
   int buttonWidth = displayWidth / BUTTON_WIDTH_PROPORTION;
   int buttonHeight = displayHeight / BUTTON_HEIGHT_PROPORTION;
   int buttonGap = displayHeight / BUTTON_GAP_PROPORTION;
-  int logoInitX = displayWidth / LOGO_INIT_X_PROPORTION;
-  int logoInitY = displayHeight / LOGO_INIT_Y_PROPORTION;
+  float logoInitX = displayWidth / LOGO_INIT_X_PROPORTION;
+  float logoInitY = displayHeight / LOGO_INIT_Y_PROPORTION;
   end = new EndScreen(endButtonInitX, endButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, buttonGap, gamePrimary, gameSecondary, GAME_WHITE, gamePrimary);
   start = new StartScreen(startButtonInitX, startButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, gamePrimary, gameSecondary, GAME_WHITE, buttonGap, logoInitX, logoInitY);
+  menu = new Menu(startButtonInitX, startButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, gamePrimary, gameSecondary, GAME_WHITE, buttonGap, GAME_WHITE, ICON_SIZE);
   help = new Help(GAME_WHITE, BUTTON_GAP_PROPORTION);
 }
 
@@ -294,8 +293,14 @@ void keyPressed() {
         break;
       case 'W':
       case 'w':
-        player1.jump();
+        if (!menuScreen)
+          player1.jump();
+        else
+          menu.chooseNextPlayerOne();
         break;
+      case 'S':
+      case 's':
+        menu.choosePrevPlayerOne();
       case 'F':
       case 'f':
         player1.block();
@@ -343,7 +348,13 @@ void keyPressed() {
         player2.movingRight = true;
         break;
       case UP:
-        player2.jump();
+        if (!menuScreen)
+          player2.jump();
+        else
+          menu.chooseNextPlayerTwo();
+        break;
+      case DOWN:
+        menu.choosePrevPlayerTwo();
         break;
       case SHIFT:
         if (player2.state != PlayerState.ATTACKING && player2.state != PlayerState.AIR_ATTACKING) {
@@ -524,9 +535,10 @@ void endMousePressedActions() {
     /* // Reset the game */ 
     resetGame();
     endScreen = false;
-    /* start.startedGame = true; */
+    startScreen = true;
   }
   else if (end.mainMenu.buttonHover) {
+    resetGame();
     startScreen = true;
     endScreen = false;
   }
@@ -543,16 +555,11 @@ void startMousePressedActions() {
     // Reset game and load user settings
     resetGame();
     startScreen = false;
-    /* loadSettings(); */
-    start.startedGame = true;
+    menuScreen = true;
   }
   else if (start.resumeGameButton.buttonHover && start.resumeGameButton.active) {
     startScreen = false;
   }
-  /* else if (start.settingsButton.buttonHover && start.settingsButton.active) { */
-  /*   startScreen = false; */
-  /*   /1* settingsScreen = true; *1/ */
-  /* } */
   else if (start.mainMenuButton.buttonHover && start.mainMenuButton.active) {
     start.startedGame = false;
   }
@@ -577,6 +584,37 @@ void helpMousePressedActions() {
   }
 }
 
+/**
+ * Menu screen mouse pressed actions
+ */
+void menuMousePressedActions() {
+  if (mouseX >= displayWidth / 60 && mouseX <= displayWidth / 60 + menu.backIcon.width) {
+    if (mouseY >= displayHeight / 25 && mouseY <= displayHeight / 25 + menu.backIcon.height) {
+      menuScreen = false;
+      startScreen = true;
+    }
+  }
+  else if (menu.twoPlayer.buttonHover && menu.twoPlayer.active) {
+    aiPlaying = false;
+    menuScreen = false;
+    start.startedGame = true;
+    loadSettings();
+  }
+  else if (menu.onePlayer.buttonHover && menu.onePlayer.active) {
+    aiPlaying = true;
+    menuScreen = false;
+    start.startedGame = true;
+    loadSettings();
+  }
+}
+
+void loadSettings() {
+  player1.characterIndex = menu.playerOneIndex;
+  player1.loadTextures(player1.characters[menu.playerOneIndex]);
+  player2.characterIndex = menu.playerTwoIndex;
+  player2.loadTextures(player2.characters[menu.playerTwoIndex]);
+}
+
 void mousePressed() {
   if (endScreen) {
     endMousePressedActions();
@@ -586,5 +624,8 @@ void mousePressed() {
   }
   if (helpScreen) {
     helpMousePressedActions();
+  }
+  if (menuScreen) {
+    menuMousePressedActions();
   }
 }
