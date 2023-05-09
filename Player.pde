@@ -110,7 +110,8 @@ final class Player extends Particle {
     //update world
     this.platforms = platforms;
 
-
+    if (isAI)
+      println(state);
     //change character
     if(swapCharacter){
       characterIndex++;
@@ -135,11 +136,11 @@ final class Player extends Particle {
       position.y = lowerLimit;
     }
 
-    if(movingLeft && state != PlayerState.DYING){
+    if(movingLeft && state != PlayerState.DYING && !isAI){
       state = PlayerState.RUNNING;
       moveLeft();
       facingRight = false;
-    } else if(movingRight && state != PlayerState.DYING){
+    } else if(movingRight && state != PlayerState.DYING && !isAI){
       state = PlayerState.RUNNING;
       moveRight();
       facingRight = true;
@@ -220,7 +221,7 @@ final class Player extends Particle {
     }
 
     updateHitboxes();
-    drawPlayerHitbox();
+    /* drawPlayerHitbox(); */
   }
 
   void loadJson(){
@@ -460,13 +461,14 @@ final class Player extends Particle {
 
       targetVelocity = targetPos.get() ;
       targetVelocity.normalize() ;
-      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x / 2.5;
+      if (velocity.x >= -velXLimit) velocity.x -= targetVelocity.x / 2.5;
     }
 
     // Bit of drag
     velocity.x *= DRAG;
-    if (position.x >= rightLimit) position.x = rightLimit;
-    if (position.x <= leftLimit) position.x = leftLimit;
+    if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
+      velocity.x = -velocity.x * 1.5;
+    }
   }
 
   void moveLeftAwayPlayer(PVector otherPos) {
@@ -483,13 +485,14 @@ final class Player extends Particle {
 
       targetVelocity = targetPos.get() ;
       targetVelocity.normalize() ;
-      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x / 2.5;
+      if (velocity.x >= -velXLimit) velocity.x -= moveIncrement / 8;
     }
 
     // Bit of drag
     velocity.x *= DRAG;
-    if (position.x >= rightLimit) position.x = rightLimit;
-    if (position.x <= leftLimit) position.x = leftLimit;
+    if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
+      velocity.x = -velocity.x * 1.5;
+    }
   }
 
   void moveRightToPlayer(PVector otherPos) {
@@ -512,7 +515,7 @@ final class Player extends Particle {
     // Bit of drag
     velocity.x *= DRAG;
     if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
-      velocity.x = -velocity.x * 3;
+      velocity.x = -velocity.x * 1.5;
     }
   }
 
@@ -528,24 +531,21 @@ final class Player extends Particle {
       if (distance <= SLOW_RADIUS)
         targetSpeed = velocity.x * distance / SLOW_RADIUS ;
 
-      targetVelocity = targetPos.get() ;
-      targetVelocity.normalize() ;
-      if (velocity.x < velXLimit) velocity.x += targetVelocity.x / 2.5;
+      if (velocity.x < velXLimit) velocity.x += moveIncrement / 8;
     }
 
     // Bit of drag
     velocity.x *= DRAG;
     if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
-      velocity.x = -velocity.x * 3;
+      velocity.x = -velocity.x * 1.5;
     }
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
-    boolean fleeing = health < 50;
     float playerDist = dist(position.x, position.y, otherPos.x, otherPos.y);
     if (playerDist > TARGET_RADIUS) {
-      state = PlayerState.RUNNING;
-      if (!fleeing) {
+      if (state != PlayerState.FLEEING) {
+        state = PlayerState.RUNNING;
         if (otherPos.x < position.x) {
           moveLeftToPlayer(otherPos);
         } else if (otherPos.x > position.x) {
@@ -566,12 +566,23 @@ final class Player extends Particle {
       }
     }
     else {
-      if (state != PlayerState.FLEEING) {
-        velocity.x = 0;
-      }
+      velocity.x = 0;
     }
   }
 
+  void fleeJump(PVector otherPos, ArrayList<Platform> platforms) {
+    if (otherPos.y > position.y) {
+      Platform nearestPlatform = getNearestPlatform(platforms);
+      if (nearestPlatform != null) {
+        if (nearestPlatform.position.x < position.x) {
+          moveRightToPlayer(new PVector(nearestPlatform.position.x, nearestPlatform.position.y));
+        }
+        else { 
+          moveLeftToPlayer(new PVector(nearestPlatform.position.x, nearestPlatform.position.y)); 
+        }
+      }
+    }
+  }
 
   void updateState() {
     switch (state) {
@@ -581,6 +592,7 @@ final class Player extends Particle {
       case ATTACKING:
         currentFrames = airAtkFrames;
         break;
+      case FLEEING:
       case RUNNING:
         currentFrames = runFrames;
         break;
@@ -607,32 +619,39 @@ final class Player extends Particle {
 
   void findBestState(Player otherPlayer) {
     float playerDist = dist(position.x, position.y, otherPlayer.position.x, otherPlayer.position.y);
+    float blockProbablity = random(0, 1);
+    float attackProbablity = random(0, 1);
+    float fleeProbablity = 0;
+    if (health < 50) {
+      blockProbablity += random(0, 0.2);
+      fleeProbablity = random(0, 1);
+    }
     if (playerDist < TARGET_RADIUS) {
-      float blockProbablity = random(0, 1);
-      float attackProbablity = random(0, 1);
-      float fleeProbablity = random(0, 1);
-      if (health > 50) {
-        if (player1.state == PlayerState.ATTACKING) {
+      if (fleeProbablity > 0.3) {
+          state = PlayerState.FLEEING;
+      }
+      else {
+        velocity.x = 0;
+        if (state == PlayerState.FLEEING) {
+          state = PlayerState.IDLE;
+        }
+        if (otherPlayer.state == PlayerState.ATTACKING) {
           if (blockProbablity > 0.7) {
             state = PlayerState.BLOCKING;
-            coolDownFrame = frameCount;
           } 
         }
-        if (coolDownFrame + 30 < frameCount) {
+        else if (coolDownFrame + 15 < frameCount) {
           if (attackProbablity > 0.7){
             state = PlayerState.ATTACKING;
             coolDownFrame = frameCount;
           }
         }
-      } 
-      else {
-        fleeProbablity += random(10, 20);
-        if (fleeProbablity > 0.8)
-          state = PlayerState.FLEEING;
       }
     }
     else {
-      state = PlayerState.RUNNING;
+      if (fleeProbablity > 0.3) {
+        state = PlayerState.FLEEING;
+      }
     }
   }
 }

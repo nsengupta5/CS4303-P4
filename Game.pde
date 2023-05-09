@@ -444,7 +444,6 @@ void checkHit(){
   }
 }
 
-
 void checkPlayerCollision(){
   if(player1.facingRight && player1.movingRight){
     if(player1.playerBox.intersects(player2.playerBox)){
@@ -498,8 +497,8 @@ void endMousePressedActions() {
     /* start.startedGame = true; */
   }
   else if (end.mainMenu.buttonHover) {
-    endScreen = false;
     startScreen = true;
+    endScreen = false;
   }
   else if (end.endButton.buttonHover) {
     exit();
@@ -547,7 +546,6 @@ void helpMousePressedActions() {
     }
   }
 }
-
 
 void mousePressed() {
   if (endScreen) {
