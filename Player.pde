@@ -67,6 +67,7 @@ final class Player extends Particle {
   ArrayList<Platform> platforms;
   PVector targetVelocity = new PVector(0, 0);
   JSONObject characterJSON;
+  int coolDownFrame = -1;
 
   Player(int x, int y, float xVel, float yVel, float invM, int animationWidth, int animationHeight, int moveIncrement, int jumpIncrement, float leftLimit, float rightLimit, float upperLimit, float lowerLimit, float groundLimit, float velXLimit, int characterIndex, ForceRegistry registry, Gravity gravity, boolean isAI){
     super(x, y, xVel, yVel, invM);
@@ -144,7 +145,12 @@ final class Player extends Particle {
       facingRight = true;
     }
 
-    if(!isAirborne && !isAI && state != PlayerState.ATTACKING && velocity.x == 0) {
+    if(!isAirborne && 
+        state != PlayerState.ATTACKING && 
+        state != PlayerState.BLOCKING && 
+        state != PlayerState.DYING &&
+        state != PlayerState.FLEEING && 
+        velocity.x == 0) {
       state = PlayerState.IDLE;
     }
 
@@ -442,6 +448,29 @@ final class Player extends Particle {
 
   void moveLeftToPlayer(PVector otherPos) {
     facingRight = false;
+    PVector targetPos = position.copy().sub(otherPos);
+    if (velocity.x > -velXLimit) position.x += velocity.x;
+
+    float distance = targetPos.mag() ;
+    // If arrived, no acceleration.
+    if (distance > TARGET_RADIUS) {
+      float targetSpeed = velocity.x;    
+      if (distance <= SLOW_RADIUS)
+        targetSpeed = velocity.x * distance / SLOW_RADIUS ;
+
+      targetVelocity = targetPos.get() ;
+      targetVelocity.normalize() ;
+      if (velocity.x > -velXLimit) velocity.x -= targetVelocity.x / 2.5;
+    }
+
+    // Bit of drag
+    velocity.x *= DRAG;
+    if (position.x >= rightLimit) position.x = rightLimit;
+    if (position.x <= leftLimit) position.x = leftLimit;
+  }
+
+  void moveLeftAwayPlayer(PVector otherPos) {
+    facingRight = false;
     PVector targetPos = otherPos.copy().sub(position);
     if (velocity.x > -velXLimit) position.x += velocity.x;
 
@@ -459,10 +488,33 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
+    if (position.x >= rightLimit) position.x = rightLimit;
     if (position.x <= leftLimit) position.x = leftLimit;
   }
 
   void moveRightToPlayer(PVector otherPos) {
+    facingRight = true;
+    PVector targetPos = otherPos.copy().sub(position);
+    if (velocity.x < velXLimit) position.x += velocity.x;
+
+    float distance = targetPos.mag() ;
+    // If arrived, no acceleration.
+    if (distance > TARGET_RADIUS) {
+      float targetSpeed = velocity.x;    
+      if (distance <= SLOW_RADIUS)
+        targetSpeed = velocity.x * distance / SLOW_RADIUS ;
+
+      targetVelocity = targetPos.get() ;
+      targetVelocity.normalize() ;
+      if (velocity.x < velXLimit) velocity.x += targetVelocity.x / 2.5;
+    }
+
+    // Bit of drag
+    velocity.x *= DRAG;
+    if ((position.x < leftLimit) || (position.x > rightLimit)) velocity.x = -velocity.x ;
+  }
+
+  void moveRightAwayPlayer(PVector otherPos) {
     facingRight = true;
     PVector targetPos = position.copy().sub(otherPos);
     if (velocity.x < velXLimit) position.x += velocity.x;
@@ -481,17 +533,27 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
-    if (position.x >= rightLimit) position.x = rightLimit;
+    if ((position.x < leftLimit) || (position.x > rightLimit)) velocity.x = -velocity.x ;
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
+    boolean fleeing = health < 50;
     float playerDist = dist(position.x, position.y, otherPos.x, otherPos.y);
     if (playerDist > TARGET_RADIUS) {
       state = PlayerState.RUNNING;
-      if (otherPos.x < position.x) {
-        moveLeftToPlayer(otherPos);
-      } else if (otherPos.x > position.x) {
-        moveRightToPlayer(otherPos);
+      if (!fleeing) {
+        if (otherPos.x < position.x) {
+          moveLeftToPlayer(otherPos);
+        } else if (otherPos.x > position.x) {
+          moveRightToPlayer(otherPos);
+        }
+      }
+      else {
+        if (otherPos.x < position.x) {
+          moveRightAwayPlayer(otherPos);
+        } else if (otherPos.x > position.x) {
+          moveLeftAwayPlayer(otherPos);
+        }
       }
       ArrayList<Platform> jumpablePlatforms = getJumpablePlatforms(platforms);
       if (jumpablePlatforms.size() > 0 && otherPos.y + playerBox.getHeight() / 2 < position.y) {
@@ -500,7 +562,9 @@ final class Player extends Particle {
       }
     }
     else {
-      velocity.x = 0;
+      if (state != PlayerState.FLEEING) {
+        velocity.x = 0;
+      }
     }
   }
 
@@ -541,13 +605,26 @@ final class Player extends Particle {
     if (playerDist < TARGET_RADIUS) {
       float blockProbablity = random(0, 1);
       float attackProbablity = random(0, 1);
-      if (health < health * 0.5) {
-        if (blockProbablity < 0.5) {
-          state = PlayerState.BLOCKING;
-        } else {
-          state = PlayerState.ATTACKING;
+      float fleeProbablity = random(0, 1);
+      if (health > 50) {
+        if (player1.state == PlayerState.ATTACKING) {
+          if (blockProbablity > 0.8) {
+            state = PlayerState.BLOCKING;
+            coolDownFrame = frameCount;
+          } 
+        }
+        if (coolDownFrame + 30 < frameCount) {
+          if (attackProbablity > 0.7){
+            state = PlayerState.ATTACKING;
+            coolDownFrame = frameCount;
+          }
         }
       } 
+      else {
+        fleeProbablity += random(10, 20);
+        if (fleeProbablity > 0.8)
+          state = PlayerState.FLEEING;
+      }
     }
     else {
       state = PlayerState.RUNNING;
