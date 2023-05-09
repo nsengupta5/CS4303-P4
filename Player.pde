@@ -138,11 +138,13 @@ final class Player extends Particle {
     }
 
     if(movingLeft && state != PlayerState.DYING){
-      state = PlayerState.RUNNING;
+      if (state != PlayerState.ATTACKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.STUNNED && state != PlayerState.BLOCKING) 
+        state = PlayerState.RUNNING;
       moveLeft();
       facingRight = false;
     } else if(movingRight && state != PlayerState.DYING){
-      state = PlayerState.RUNNING;
+      if (state != PlayerState.ATTACKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && state != PlayerState.STUNNED && state != PlayerState.BLOCKING) 
+        state = PlayerState.RUNNING;
       moveRight();
       facingRight = true;
     }
@@ -268,6 +270,8 @@ final class Player extends Particle {
     } 
     else if (state == PlayerState.ATTACKING_ABILITY_ONE) {
       thisAttack = attacks.getJSONObject("ability1");
+      if (!isAI)
+        println(thisAttack);
     }
     else if (state == PlayerState.ATTACKING_ABILITY_TWO) {
       thisAttack = attacks.getJSONObject("ability2");
@@ -281,8 +285,6 @@ final class Player extends Particle {
     // println(hitboxDims);
 
     playerBox.setRect(this.position.x-hitboxXScale/2, this.position.y+hitboxYScale/2, (float) playerBox.getWidth(), (float) playerBox.getHeight());
-
-
 
     float attackBoxX;
     float attackBoxY = this.position.y+hitboxYScale/2 + ((float)hitboxDims[1]*hitboxYScale/100);
@@ -367,6 +369,19 @@ final class Player extends Particle {
       state = PlayerState.ATTACKING;
     }
   }
+
+  void useAbility1(){
+    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+      state = PlayerState.ATTACKING_ABILITY_ONE;
+    }
+  }
+
+  void useAbility2(){
+    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
+      state = PlayerState.ATTACKING_ABILITY_TWO;
+    }
+  }
+
 
   void block() {
     if (state != PlayerState.BLOCKING && state != PlayerState.ATTACKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
@@ -482,18 +497,6 @@ final class Player extends Particle {
       if(health > 0)        this.health -=damage;
       else                  this.health = 0;
     } 
-  }
-
-   void useAbility1(){
-    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
-      state = PlayerState.ATTACKING_ABILITY_ONE;
-    }
-  }
-
-   void useAbility2(){
-    if (state != PlayerState.ATTACKING && state != PlayerState.BLOCKING && state != PlayerState.ATTACKING_ABILITY_ONE && state != PlayerState.ATTACKING_ABILITY_TWO && !isAirborne) {
-      state = PlayerState.ATTACKING_ABILITY_TWO;
-    }
   }
 
   void moveLeftToPlayer(PVector otherPos) {
@@ -682,7 +685,7 @@ final class Player extends Particle {
     }
     if (playerDist < TARGET_RADIUS) {
       if (fleeProbablity > 0.3) {
-          state = PlayerState.FLEEING;
+        state = PlayerState.FLEEING;
       }
       else {
         velocity.x = 0;
@@ -696,7 +699,13 @@ final class Player extends Particle {
         }
         else if (coolDownFrame + 15 < frameCount) {
           if (attackProbablity > 0.7){
-            state = PlayerState.ATTACKING;
+            float attackChoice = random(0, 1);
+            if (attackChoice < 0.3)
+              state = PlayerState.ATTACKING;
+            else if (attackChoice < 0.6)
+              state = PlayerState.ATTACKING_ABILITY_ONE;
+            else
+              state = PlayerState.ATTACKING_ABILITY_TWO;
             coolDownFrame = frameCount;
           }
         }

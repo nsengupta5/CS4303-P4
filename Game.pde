@@ -414,12 +414,10 @@ void checkHit(){
     p1thisAttack = p1attacks.getJSONObject("normal");  
   }
 
-
   int[] p1hitFrames = p1thisAttack.getJSONArray("hitframes").toIntArray();
   int p1damage = p1thisAttack.getInt("damage");
 
-
-  if(player1.state == PlayerState.ATTACKING
+  if((player1.state == PlayerState.ATTACKING || player1.state == PlayerState.ATTACKING_ABILITY_ONE || player1.state == PlayerState.ATTACKING_ABILITY_TWO || player1.state == PlayerState.AIR_ATTACKING)
       && Arrays.stream(p1hitFrames).anyMatch(i -> i == player1.currentFrame)){
 
     player1.drawAttackHitbox();
@@ -457,7 +455,7 @@ void checkHit(){
   int[] p2hitFrames = p2thisAttack.getJSONArray("hitframes").toIntArray();
   int p2damage = p2thisAttack.getInt("damage");
 
-  if(player2.state == PlayerState.ATTACKING
+  if((player2.state == PlayerState.ATTACKING || player2.state == PlayerState.ATTACKING_ABILITY_ONE || player2.state == PlayerState.ATTACKING_ABILITY_TWO || player2.state == PlayerState.AIR_ATTACKING)
       && Arrays.stream(p2hitFrames).anyMatch(i -> i == player2.currentFrame)){
 
     player2.drawAttackHitbox();
