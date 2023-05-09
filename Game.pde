@@ -605,11 +605,6 @@ void endMousePressedActions() {
     endScreen = false;
     startScreen = true;
   }
-  else if (end.mainMenu.buttonHover) {
-    resetGame();
-    startScreen = true;
-    endScreen = false;
-  }
   else if (end.endButton.buttonHover) {
     exit();
   }

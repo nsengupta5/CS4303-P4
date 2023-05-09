@@ -23,8 +23,8 @@ final class EndScreen {
     this.buttonColor = buttonColor;
     this.textColor = textColor;
     newGameButton = new Button(buttonInitX, buttonInitY, buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "NEW GAME");
-    mainMenu = new Button(buttonInitX, buttonInitY + buttonHeight + buttonGap, buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "MAIN MENU");
-    endButton = new Button(buttonInitX, buttonInitY + (2 * buttonHeight) + (buttonGap * 2), buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "QUIT");
+    // mainMenu = new Button(buttonInitX, buttonInitY + buttonHeight + buttonGap, buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "MAIN MENU");
+    endButton = new Button(buttonInitX, buttonInitY + buttonHeight + (buttonGap ), buttonWidth, buttonHeight, buttonRadius, buttonColor, buttonHoverColor, buttonTextColor, "QUIT");
     winner = "";
   }
 
@@ -34,7 +34,7 @@ final class EndScreen {
     fill(textColor);
     text(winner + " won!", displayWidth / 2, displayHeight / 4);
     newGameButton.draw();
-    mainMenu.draw();
+    // mainMenu.draw();
     endButton.draw();
   }
 
