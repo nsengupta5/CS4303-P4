@@ -511,7 +511,9 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
-    if ((position.x < leftLimit) || (position.x > rightLimit)) velocity.x = -velocity.x ;
+    if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
+      velocity.x = -velocity.x * 3;
+    }
   }
 
   void moveRightAwayPlayer(PVector otherPos) {
@@ -533,7 +535,9 @@ final class Player extends Particle {
 
     // Bit of drag
     velocity.x *= DRAG;
-    if ((position.x < leftLimit) || (position.x > rightLimit)) velocity.x = -velocity.x ;
+    if ((position.x <= leftLimit) || (position.x >= rightLimit)) {
+      velocity.x = -velocity.x * 3;
+    }
   }
 
   void moveAI(PVector otherPos, ArrayList<Platform> platforms) {
@@ -567,6 +571,7 @@ final class Player extends Particle {
       }
     }
   }
+
 
   void updateState() {
     switch (state) {
@@ -608,7 +613,7 @@ final class Player extends Particle {
       float fleeProbablity = random(0, 1);
       if (health > 50) {
         if (player1.state == PlayerState.ATTACKING) {
-          if (blockProbablity > 0.8) {
+          if (blockProbablity > 0.7) {
             state = PlayerState.BLOCKING;
             coolDownFrame = frameCount;
           } 

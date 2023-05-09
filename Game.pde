@@ -5,6 +5,11 @@ import java.util.Arrays;
 final int PARTICLE_INIT_XVEL = 0,
       PARTICLE_INIT_YVEL = 0;
 
+// Logo global variable
+final int LOGO_INIT_X_PROPORTION = 3,
+          LOGO_INIT_Y_PROPORTION = 6;
+
+
 final float PARTICLE_INVM_LOWER_LIM = 0.001f,
       PARTICLE_INVM_UPPER_LIM = 0.005f;
 
@@ -54,7 +59,7 @@ final int BUTTON_WIDTH_PROPORTION = 8,
 
 // Color global variables
 final color GAME_PRIMARY = color(48,69,41),
-      GAME_SECONDARY = color(203, 133, 133),
+      GAME_SECONDARY = color(108, 172, 156),
       GAME_WHITE = color(250, 250, 250),
       GAME_BACKGROUND = color(234, 221, 202);
 
@@ -76,8 +81,12 @@ Gravity gravity;
 
 World world;
 
-boolean endScreen = false;
+Help help;
 EndScreen end;
+StartScreen start;
+boolean endScreen = false;
+boolean startScreen = true;
+boolean helpScreen = false;
 
 color gamePrimary;
 color gameSecondary;
@@ -114,7 +123,6 @@ void setup() {
   setupScreens();
   backgroundimg = loadImage("textures/Jungle.png","png");
   backgroundimg.resize(displayWidth,displayHeight);
-
   loadJson();
 }
 
@@ -127,18 +135,23 @@ void loadJson(){
 
 void draw() {
   background(backgroundimg);
-  // background(#000000);
-  player1.updateState();
-  player2.updateState();
-  player1.checkHoveringOnPlatform(world.platforms);
-  player2.checkHoveringOnPlatform(world.platforms);
-  player2.moveAI(player1.position.copy(), world.platforms);
-  player2.findBestState(player1);
-  player1.getJumpablePlatforms(world.platforms);
-  if (endScreen && player1.state != PlayerState.DYING && player2.state != PlayerState.DYING) {
+  if (startScreen) {
+    start.draw();
+  }
+  else if (helpScreen) {
+    help.draw();
+  }
+  else if (endScreen && player1.state != PlayerState.DYING && player2.state != PlayerState.DYING) {
     end.draw();
   }
   else {
+    player1.updateState();
+    player2.updateState();
+    player1.checkHoveringOnPlatform(world.platforms);
+    player2.checkHoveringOnPlatform(world.platforms);
+    player2.moveAI(player1.position.copy(), world.platforms);
+    player2.findBestState(player1);
+    player1.getJumpablePlatforms(world.platforms);
     world.draw();
     /* checkPlayerCollision(); */
     checkHit();
@@ -227,12 +240,18 @@ void setupWorld() {
  * Sets up the screens in the game
  */
 void setupScreens() {
+  float startButtonInitX = displayWidth / START_BUTTON_INIT_X_PROPORTION;
+  float startButtonInitY = displayHeight / START_BUTTON_INIT_Y_PROPORTION;
   float endButtonInitX = displayWidth / END_BUTTON_INIT_X_PROPORTION;
   float endButtonInitY = displayHeight / END_BUTTON_INIT_Y_PROPORTION;
   int buttonWidth = displayWidth / BUTTON_WIDTH_PROPORTION;
   int buttonHeight = displayHeight / BUTTON_HEIGHT_PROPORTION;
   int buttonGap = displayHeight / BUTTON_GAP_PROPORTION;
+  int logoInitX = displayWidth / LOGO_INIT_X_PROPORTION;
+  int logoInitY = displayHeight / LOGO_INIT_Y_PROPORTION;
   end = new EndScreen(endButtonInitX, endButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, buttonGap, gamePrimary, gameSecondary, GAME_WHITE, gamePrimary);
+  start = new StartScreen(startButtonInitX, startButtonInitY, buttonWidth, buttonHeight, BUTTON_RADIUS, gamePrimary, gameSecondary, GAME_WHITE, buttonGap, logoInitX, logoInitY);
+  help = new Help(GAME_WHITE, BUTTON_GAP_PROPORTION);
 }
 
 /**
@@ -453,5 +472,91 @@ void checkPlayerCollision(){
       player2.position.x += playerMoveIncrement;
       player1.position.x -= playerMoveIncrement;
     }
+  }
+}
+
+void resetGame() {
+  int animationWidth = displayWidth/PLAYER_WIDTH_PROPORTION;
+  int animationHeight = displayHeight/PLAYER_HEIGHT_PROPORTION;
+  int player1InitX = animationWidth/2;
+  player1.health = 100;
+  player2.health = 100;
+  player1.position.x = animationWidth/2;
+  player2.position.x = displayWidth - animationWidth/2;
+  player1.position.y = displayHeight - animationHeight*4;
+  player2.position.y = displayHeight - animationHeight*4;
+}
+
+/**
+ * End screen mouse pressed actions
+ */
+void endMousePressedActions() {
+  if (end.newGameButton.buttonHover) {
+    /* // Reset the game */ 
+    resetGame();
+    endScreen = false;
+    /* start.startedGame = true; */
+  }
+  else if (end.mainMenu.buttonHover) {
+    endScreen = false;
+    startScreen = true;
+  }
+  else if (end.endButton.buttonHover) {
+    exit();
+  }
+}
+
+/**
+ * Start screen mouse pressed actions
+ */
+void startMousePressedActions() {
+  if (start.startButton.buttonHover && start.startButton.active) {
+    // Reset game and load user settings
+    resetGame();
+    startScreen = false;
+    /* loadSettings(); */
+    start.startedGame = true;
+  }
+  else if (start.resumeGameButton.buttonHover && start.resumeGameButton.active) {
+    startScreen = false;
+  }
+  /* else if (start.settingsButton.buttonHover && start.settingsButton.active) { */
+  /*   startScreen = false; */
+  /*   /1* settingsScreen = true; *1/ */
+  /* } */
+  else if (start.mainMenuButton.buttonHover && start.mainMenuButton.active) {
+    start.startedGame = false;
+  }
+  else if (start.helpButton.buttonHover) {
+    startScreen = false;
+    helpScreen = true;
+  }
+  else if (start.endButton.buttonHover) {
+    exit();
+  }
+}
+
+/**
+ * Help screen mouse pressed actions
+ */
+void helpMousePressedActions() {
+  if (mouseX >= displayWidth / 60 && mouseX <= displayWidth / 60 + help.backIcon.width) {
+    if (mouseY >= displayHeight / 25 && mouseY <= displayHeight / 25 + help.backIcon.height) {
+      helpScreen = false;
+      startScreen = true;
+    }
+  }
+}
+
+
+void mousePressed() {
+  if (endScreen) {
+    endMousePressedActions();
+  }
+  if (startScreen) {
+    startMousePressedActions();
+  }
+  if (helpScreen) {
+    helpMousePressedActions();
   }
 }
